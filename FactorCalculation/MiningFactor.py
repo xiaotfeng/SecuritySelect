@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from pyfinance.ols import PandasRollingOLS
 import warnings
 import time
-from constant import KeysName as K
+from SecuritySelect.constant import KeysName as K
 
 warnings.filterwarnings(action='ignore')
 
@@ -40,16 +40,14 @@ class GeneticFactor(object):
         data.set_index([K.TRADE_DATE.value, K.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
         # 最高价对前收盘价收益率
-        cal_sub1 = data[[close_name, high_name]].groupby(as_index=True,
-                                                         level=K.STOCK_ID.value,
+        cal_sub1 = data[[close_name, high_name]].groupby(K.STOCK_ID.value,
                                                          group_keys=False). \
             apply(lambda x:
                   x[high_name] / x[close_name].shift(1) - 1)
 
         # 考虑负数无法开根号问题
         cal_sub2 = np.sign(cal_sub1) * np.sqrt(abs(cal_sub1))
-        cal_sub3 = cal_sub2.groupby(as_index=True,
-                                    level=K.STOCK_ID.value).apply(lambda x: x.rolling(20).mean() / x.rolling(20).std())
+        cal_sub3 = cal_sub2.groupby(K.STOCK_ID.value).apply(lambda x: x.rolling(20).mean() / x.rolling(20).std())
         result = np.log(cal_sub3)
 
         # 将无限大值转化为NaN
@@ -91,8 +89,7 @@ class GeneticFactor(object):
         data['VWAP'] = data[amount_name] / data[volume_name] * data[adj_factor_name]
 
         # 生成Y
-        cal_sub1 = data[[close_name, 'VWAP']].groupby(as_index=True,
-                                                      level=K.STOCK_ID.value,
+        cal_sub1 = data[[close_name, 'VWAP']].groupby(K.STOCK_ID.value,
                                                       group_keys=False).apply(
             lambda x: x['VWAP'] / x[close_name].shift(1) - 1)
         cal_sub1 = cal_sub1.droplevel(0)
@@ -100,19 +97,16 @@ class GeneticFactor(object):
         data['reg_y'] = - np.sign(cal_sub1) * np.log(abs(cal_sub1))
 
         # 生成X
-        cal_sub2 = data[[high_name, 'VWAP']].groupby(as_index=True,
-                                                     level=K.STOCK_ID.value).apply(
+        cal_sub2 = data[[high_name, 'VWAP']].groupby(K.STOCK_ID.value).apply(
             lambda x: x[high_name] / x[close_name].shift(1) - 1)
 
-        data['return_sta'] = cal_sub2.groupby(as_index=True,
-                                              level=K.TRADE_DATE.value).apply(
+        data['return_sta'] = cal_sub2.groupby(K.TRADE_DATE.value).apply(
             lambda x: (x - x.min()) / (x.max() - x.min()))
 
         # 处理无限大值
         data[np.isinf(data['return_sta'])] = np.nan
 
-        data['volume_sta'] = data[amount_name].groupby(as_index=True,
-                                                       level=K.TRADE_DATE.value).apply(
+        data['volume_sta'] = data[amount_name].groupby(K.TRADE_DATE.value).apply(
             lambda x: (x - x.min()) / (x.max() - x.min()))
 
         # 处理无限大值
@@ -121,8 +115,7 @@ class GeneticFactor(object):
         data['reg_x'] = data[['return_sta', 'volume_sta']].min(axis=1, skipna=False)
 
         # 滚动回归
-        result = data[['reg_x', 'reg_y']].groupby(as_index=True,
-                                                  level=K.TRADE_DATE.value,
+        result = data[['reg_x', 'reg_y']].groupby(K.TRADE_DATE.value,
                                                   group_keys=False).apply(
             lambda x: pd.Series(index=x.index) if len(x) < 20 else PandasRollingOLS(x=x['reg_x'],
                                                                                     y=x['reg_y'],
@@ -155,17 +148,15 @@ class GeneticFactor(object):
 
         turnover = data[amount_name] / data[liq_mv_name]
 
-        data['close_7'] = data[close_name].groupby(as_index=True,
-                                                   level='code'). \
+        data['close_7'] = data[close_name].groupby('code'). \
             apply(lambda x: (x - x.rolling(7).min()) / (x.rolling(7).max() - x.rolling(7).min()))
         # 处理无限大值
         data[np.isinf(data['close_7'])] = np.nan
 
-        data['turn_rank'] = turnover.groupby(as_index=True, level='code').apply(lambda x: cls.rank_(x, 5))
+        data['turn_rank'] = turnover.groupby(level='code').apply(lambda x: cls.rank_(x, 5))
 
         # 滚动计算相关性
-        result = data[['close_7', 'turn_rank']].groupby(as_index=True,
-                                                        level='code').apply(
+        result = data[['close_7', 'turn_rank']].groupby('code').apply(
             lambda x: x['close_7'].rolling(15).corr(x['turn_rank']))
 
         # 将无限大值转化为NaN
@@ -197,12 +188,10 @@ class GeneticFactor(object):
 
         # 计算换手率
         turnover = data[amount_name] / data[total_mv_name]
-        cal_sub1 = turnover.groupby(as_index=True,
-                                    level='code').apply(lambda x: x.rolling(15).max())
+        cal_sub1 = turnover.groupby('code').apply(lambda x: x.rolling(15).max())
         cal_sub2 = np.log(cal_sub1)
         # 截面标准化
-        result = cal_sub2.groupby(as_index=True,
-                                  level='date').apply(lambda x: (x - x.min()) / (x.max() - x.min()))
+        result = cal_sub2.groupby('date').apply(lambda x: (x - x.min()) / (x.max() - x.min()))
         # 处理无限大值
         result[np.isinf(result)] = np.nan
         result.name = sys._getframe().f_code.co_name
@@ -231,17 +220,16 @@ class GeneticFactor(object):
         data.set_index(['date', 'code'], inplace=True)
         data.sort_index(inplace=True)
 
-        cal_sub1 = data[[close_name, high_name]].groupby(as_index=True,
-                                                         level='code'). \
+        cal_sub1 = data[[close_name, high_name]].groupby('code'). \
             apply(lambda x: x[high_name] / x[close_name].shift(1) - 1)
 
         # 找最大值下标
-        cal_sub2 = data[amount_name].groupby(as_index=True, level='code').apply(lambda x: cls.max_index(x, n=5))
+        cal_sub2 = data[amount_name].groupby(level='code').apply(lambda x: cls.max_index(x, n=5))
 
         cal_sub3 = cal_sub1 * cal_sub2
         # 截面归一化
-        cal_sub4 = cal_sub3.groupby(as_index=True, level='date').apply(lambda x: x / x.sum())
-        result = cal_sub4.groupby(as_index=True, level='code').apply(
+        cal_sub4 = cal_sub3.groupby(level='date').apply(lambda x: x / x.sum())
+        result = cal_sub4.groupby(level='code').apply(
             lambda x: x.rolling(15).mean() / x.rolling(15).std())
 
         # 处理无限大值
@@ -278,7 +266,7 @@ class GeneticFactor(object):
         data['left'] = data['VWAP'] / data[high_name]
 
         # 计算相关性
-        result = data[['left', high_name]].groupby(as_index=True, level='code'). \
+        result = data[['left', high_name]].groupby(level='code'). \
             apply(lambda x: x['left'].rolling(10).corr(x[high_name]))
 
         result = result.droplevel(level=0)
@@ -307,18 +295,18 @@ class GeneticFactor(object):
         data.set_index(['date', 'code'], inplace=True)
         data.sort_index(inplace=True)
 
-        cal_sub1 = data[[high_name, low_name]].groupby(as_index=True, level='code'). \
+        cal_sub1 = data[[high_name, low_name]].groupby(level='code'). \
             apply(lambda x: x[high_name].rolling(20).corr(x[low_name]))
 
         # 当两个变量在时间序列上为常数时，波动为零，corr计算出来为无限大，替换为NaN
         cal_sub1[np.isinf(cal_sub1)] = np.nan
         cal_sub1 = cal_sub1.droplevel(level=0)
 
-        cal_sub2 = cal_sub1.groupby(as_index=True, level='date').apply(lambda x: (x - x.min()) / (x.max() - x.min()))
+        cal_sub2 = cal_sub1.groupby(level='date').apply(lambda x: (x - x.min()) / (x.max() - x.min()))
         # 处理无限大值
         cal_sub2[np.isinf(cal_sub2)] = np.nan
 
-        result = cal_sub2.groupby(as_index=True, level='code').apply(lambda x: x.rolling(20).sum())
+        result = cal_sub2.groupby(level='code').apply(lambda x: x.rolling(20).sum())
 
         result.name = sys._getframe().f_code.co_name
         return result
@@ -339,8 +327,7 @@ class GeneticFactor(object):
         data.set_index(['date', 'code'], inplace=True)
         data.sort_index(inplace=True)
 
-        result = - data[volume_name].groupby(as_index=True,
-                                             level='code').apply(lambda x: x.rolling(5).std())
+        result = - data[volume_name].groupby('code').apply(lambda x: x.rolling(5).std())
         # 处理无限大值
         result[np.isinf(result)] = np.nan
         result.name = sys._getframe().f_code.co_name
@@ -365,15 +352,14 @@ class GeneticFactor(object):
         data.set_index(['date', 'code'], inplace=True)
         data.sort_index(inplace=True)
 
-        cal_sub1 = data[[high_name, volume_name]].groupby(as_index=True, level='code'). \
+        cal_sub1 = data[[high_name, volume_name]].groupby(level='code', group_keys=False). \
             apply(lambda x: x[high_name].rolling(10).cov(x[volume_name]))
-        cal_sub1 = cal_sub1.droplevel(level=0)
 
-        cal_sub2 = data[high_name].groupby(as_index=True, level='code').apply(lambda x: x.rolling(10).std())
+        cal_sub2 = data[high_name].groupby(level='code').apply(lambda x: x.rolling(10).std())
 
         # rank 即标准化
-        cal_sub3 = cal_sub1.groupby(as_index=True, level='date').apply(lambda x: (x - x.min()) / (x.max() - x.min()))
-        cal_sub4 = cal_sub2.groupby(as_index=True, level='date').apply(lambda x: (x - x.min()) / (x.max() - x.min()))
+        cal_sub3 = cal_sub1.groupby(level='date').apply(lambda x: (x - x.min()) / (x.max() - x.min()))
+        cal_sub4 = cal_sub2.groupby(level='date').apply(lambda x: (x - x.min()) / (x.max() - x.min()))
 
         # 处理无限大值
         cal_sub3[np.isinf(cal_sub3)] = np.nan
@@ -401,19 +387,18 @@ class GeneticFactor(object):
         data.set_index(['date', 'code'], inplace=True)
         data.sort_index(inplace=True)
 
-        cal_sub1 = data[[high_name, volume_name]].groupby(as_index=True, level='code'). \
+        cal_sub1 = data[[high_name, volume_name]].groupby(level='code', group_keys=False). \
             apply(lambda x: x[high_name].rolling(5).cov(x[volume_name]))
-        cal_sub1 = cal_sub1.droplevel(level=0)
 
-        cal_sub2 = data[high_name].groupby(as_index=True, level='code').apply(lambda x: x.rolling(5).std())
+        cal_sub2 = data[high_name].groupby(level='code').apply(lambda x: x.rolling(5).std())
 
-        cal_sub3 = cal_sub1.groupby(as_index=True, level='date').apply(lambda x: (x - x.min()) / (x.max() - x.min()))
-        cal_sub4 = cal_sub2.groupby(as_index=True, level='date').apply(lambda x: (x - x.min()) / (x.max() - x.min()))
+        cal_sub3 = cal_sub1.groupby(level='date').apply(lambda x: (x - x.min()) / (x.max() - x.min()))
+        cal_sub4 = cal_sub2.groupby(level='date').apply(lambda x: (x - x.min()) / (x.max() - x.min()))
         # 处理无限大值
         cal_sub3[np.isinf(cal_sub3)] = np.nan
         cal_sub4[np.isinf(cal_sub4)] = np.nan
 
-        cal_sub5 = cal_sub3.groupby(as_index=True, level='code').apply(lambda x: x.rolling(5).sum())
+        cal_sub5 = cal_sub3.groupby(level='code').apply(lambda x: x.rolling(5).sum())
 
         result = - cal_sub4 * cal_sub5
         result.name = sys._getframe().f_code.co_name
@@ -440,7 +425,7 @@ class GeneticFactor(object):
         data.sort_index(inplace=True)
 
         cal_sub = (data[high_name] + data[low_name]) / data[close_name]
-        result = cal_sub.groupby(as_index=True, level='code').apply(lambda x: x.rolling(5).sum())
+        result = cal_sub.groupby(level='code').apply(lambda x: x.rolling(5).sum())
 
         result.name = sys._getframe().f_code.co_name
         return result
@@ -467,11 +452,10 @@ class GeneticFactor(object):
 
         turnover = data[amount_name] / data[total_mv_name]
 
-        data['turnover_3'] = turnover.groupby(as_index=True, level='code').shift(3)
-        result = - data[['turnover_3', volume_name]].groupby(as_index=True, level='code'). \
+        data['turnover_3'] = turnover.groupby(level='code').shift(3)
+        result = - data[['turnover_3', volume_name]].groupby(level='code', group_keys=False). \
             apply(lambda x: x['turnover_3'].rolling(7).cov(x[volume_name]))
 
-        result = result.droplevel(level=0)
         result.name = sys._getframe().f_code.co_name
 
         return result
@@ -496,12 +480,11 @@ class GeneticFactor(object):
         data.sort_index(inplace=True)
 
         data['VWAP'] = data[amount_name] / data[volume_name] * data[adj_factor_name]
-        data['volume_5'] = data[volume_name].groupby(as_index=True, level='code').shift(5)
+        data['volume_5'] = data[volume_name].groupby(level='code').shift(5)
 
-        result = - data[['volume_5', 'VWAP']].groupby(as_index=True, level='code'). \
+        result = - data[['volume_5', 'VWAP']].groupby(level='code', group_keys=False). \
             apply(lambda x: x['volume_5'].rolling(4).cov(x['VWAP']))
 
-        result = result.droplevel(level=0)
         result.name = sys._getframe().f_code.co_name
 
         return result

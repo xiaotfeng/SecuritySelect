@@ -3,9 +3,10 @@ import numpy as np
 import os
 import copy
 import time
+import datetime as dt
 from sklearn import linear_model
 
-from constant import KeysName as K
+from SecuritySelect.constant import KeysName as K
 
 
 class FactorPreprocess(object):
@@ -19,6 +20,7 @@ class FactorPreprocess(object):
 
         self.data_path = path_
         self.fact_name = ''
+        self.raw_data = {}
 
     # *去极值*
     def remove_outliers(self,
@@ -35,55 +37,8 @@ class FactorPreprocess(object):
         if method is None:
             return data
         else:
-            res = data.groupby(as_index=True,
-                               level=K.TRADE_DATE.value).apply(lambda x: method_dict[method](x))
+            res = data.groupby(K.TRADE_DATE.value).apply(method_dict[method])
             return res
-
-    # # *行业中性化*
-    # def neutralization_industry(self, data: pd.DataFrame, industry: pd.DataFrame = None):
-    #     """
-    #     因子减去行业均值
-    #     :param data:
-    #     :param industry: 行业标签
-    #     :return:
-    #     """
-    #     if industry is None:
-    #         print("行业因子缺失，无法对因子进行行业中心化处理！")
-    #         return data
-    #     else:
-    #         # 生成行业类别列
-    #         industry_category = np.array(range(1, len(industry.columns) + 1))
-    #         stock_category = pd.DataFrame(data=np.dot(industry, industry_category), index=industry.index,
-    #                                       columns=['industry'])
-    #
-    #     df_data = pd.concat([data, stock_category], axis=1, join='inner')
-    #     # 计算行业均值
-    #     industry_mean = df_data.groupby(as_index=True,
-    #                                     level=K.TRADE_DATE.value).apply(lambda x: x.groupby('industry').mean())
-    #     df_data_1 = df_data.reset_index('code').set_index('industry', append=True).sort_index()
-    #     # 中性化
-    #     df_factor_clean = df_data_1 - industry_mean
-    #     df_factor_clean['code'] = df_data_1['code']
-    #
-    #     df_factor_clean = df_factor_clean.droplevel(1).set_index('code', append=True)
-    #     return df_factor_clean
-    #
-    # def neutralization_industry2(self,
-    #                              data: pd.DataFrame,
-    #                              industry: pd.DataFrame = None):
-    #     """
-    #     哑变量回归
-    #     :param data:
-    #     :param industry:
-    #     :return:
-    #     """
-    #     if industry is None:
-    #         print("行业因子缺失，无法对因子进行行业中心化处理！")
-    #         return data
-    #     else:
-    #
-    #         pass
-    #     pass
 
     # *中性化*
     def neutralization(self,
@@ -99,35 +54,38 @@ class FactorPreprocess(object):
 
         # regression
         def _reg(data_: pd.DataFrame) -> pd.Series:
-
             data_sub_ = data_.dropna(how='any')
 
             if data_sub_.shape[0] < data_sub_.shape[1]:
                 fact_neu = pd.Series(data=np.nan, index=data_.index)
             else:
                 X, Y = data_sub_.loc[:, data_sub_.columns != self.fact_name], data_sub_[self.fact_name]
-                reg = linear_model.LinearRegression(fit_intercept=False)
-                reg.fit(X, Y)
-                beta = reg.coef_
-                residues = Y - (beta * X).sum(axis=1)
+                reg = np.linalg.lstsq(X, Y)
+                residues = Y - (reg[0] * X).sum(axis=1)
                 fact_neu = pd.Series(data=residues, index=data_sub_.index)
-
             fact_neu.name = self.fact_name
-
             return fact_neu
 
         # read mv and industry data
         if 'mv' in method:
-            mv_data = pd.read_csv(os.path.join(self.data_path, self.data_name['mv']),
-                                  index_col=['date', 'stock_id'],
-                                  usecols=['date', 'stock_id', 'liq_mv'])
+            if self.raw_data.get('mv', None) is None:
+                mv_data = pd.read_csv(os.path.join(self.data_path, self.data_name['mv']),
+                                      index_col=['date', 'stock_id'],
+                                      usecols=['date', 'stock_id', 'liq_mv'])
+                self.raw_data['mv'] = mv_data
+            else:
+                mv_data = copy.deepcopy(self.raw_data['mv'])
 
         else:
             mv_data = pd.DataFrame()
 
         if 'industry' in method:
-            industry_data = pd.read_csv(os.path.join(self.data_path, self.data_name['industry']),
-                                        index_col=['date', 'stock_id'])
+            if self.raw_data.get('industry', None) is None:
+                industry_data = pd.read_csv(os.path.join(self.data_path, self.data_name['industry']),
+                                            index_col=['date', 'stock_id'])
+                self.raw_data['industry'] = industry_data
+            else:
+                industry_data = copy.deepcopy(self.raw_data['industry'])
         else:
             industry_data = pd.DataFrame()
 
@@ -135,9 +93,7 @@ class FactorPreprocess(object):
         neu_factor = pd.concat([data, mv_data, industry_data], axis=1)
 
         # neutralization
-        res = neu_factor.groupby(as_index=True,
-                                 level=K.TRADE_DATE.value,
-                                 group_keys=False).apply(lambda x: _reg(x))
+        res = neu_factor.groupby(K.TRADE_DATE.value, group_keys=False).apply(lambda x: _reg(x))
         return res
 
     # *标准化*
@@ -154,16 +110,19 @@ class FactorPreprocess(object):
         if method is None:
             return data
         elif method == 'mv':
-            mv_data = pd.read_csv(os.path.join(self.data_path, self.data_name['mv']),
-                                  index_col=['date', 'stock_id'],
-                                  usecols=['date', 'stock_id', 'liq_mv'])
+            if self.raw_data.get('mv', None) is None:
+                mv_data = pd.read_csv(os.path.join(self.data_path, self.data_name['mv']),
+                                      index_col=['date', 'stock_id'],
+                                      usecols=['date', 'stock_id', 'liq_mv'])
+                self.raw_data['mv'] = mv_data
+            else:
+                mv_data = self.raw_data['mv']
 
             stand_data = pd.concat([data, mv_data], axis=1)
         else:
             stand_data = data
 
-        res = stand_data.groupby(as_index=True,
-                                 level=K.TRADE_DATE.value,
+        res = stand_data.groupby(K.TRADE_DATE.value,
                                  group_keys=False).apply(lambda x: method_dict[method](x))
         return res
 
@@ -274,13 +233,13 @@ class FactorPreprocess(object):
         df_factor = copy.deepcopy(factor)
 
         if outliers != '':
-            print("{}: processing outlier".format(time.ctime()))
+            print(f"{dt.datetime.now().strftime('%X')}: processing outlier")
             df_factor = self.remove_outliers(df_factor, outliers)
         if neutralization != '':
-            print("{}: neutralization".format(time.ctime()))
+            print(f"{dt.datetime.now().strftime('%X')}: neutralization")
             df_factor = self.neutralization(df_factor, neutralization)
         if standardization != '':
-            print("{}: standardization".format(time.ctime()))
+            print(f"{dt.datetime.now().strftime('%X')}: standardization")
             df_factor = self.standardization(df_factor, standardization)
 
         # TODO 因子填充？？？
@@ -378,9 +337,11 @@ class FactorPreprocess(object):
         data_group = rank_data.floordiv(amount_each_group, axis=0) + np.sign(rank_data.mod(amount_each_group, axis=0))
         data_group[data_group > n] = n
         return data_group
+
+
 if __name__ == '__main__':
     A = FactorPreprocess()
-    A.neutralization('s', method='industry+mv')
+    # A.neutralization('s', method='industry+mv')
     # df_stock = pd.read_csv("D:\\Quant\\SecuritySelect\\Data\\AStockData.csv")
     #
     # # Data cleaning:Restoration stock price [open, high, low, close]

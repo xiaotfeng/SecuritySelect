@@ -5,7 +5,7 @@ import importlib
 
 class FactorPool(object):
     def __init__(self):
-        self.factor = self.load_factor_function()
+        self.factor, self.method = self.load_factor_function()
 
     def load_factor_function(self, ):
         """
@@ -41,7 +41,7 @@ class FactorPool(object):
         """
         Load strategy class from module file.
         """
-        Factor_function = {}
+        Factor_function, Method_function = {}, {}
         for factor_class in Factor_class.values():
             for func_name in dir(factor_class):
                 if func_name.startswith('__'):
@@ -49,8 +49,10 @@ class FactorPool(object):
                 method_ = getattr(factor_class, func_name)
                 if inspect.ismethod(method_):
                     Factor_function[func_name] = method_
-        return Factor_function
+                elif inspect.isfunction(method_):
+                    Method_function[func_name] = method_
+        return Factor_function, Method_function
 
 
 if __name__ == '__main__':
-    A = FactorFunction()
+    A = FactorPool()

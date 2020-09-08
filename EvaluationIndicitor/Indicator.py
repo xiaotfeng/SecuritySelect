@@ -22,15 +22,17 @@ class Indicator(object):
 
     # 累计收益率
     def accumulative_return(self, nav: pd.Series):
-        ret = nav[-1] / nav[0]
+        ret = np.log(nav[-1] / nav[0])
         return ret
 
     # 年化累计收益率
     def return_a(self, nav: pd.Series, freq: str = 'D'):
 
-        period = (nav.index[-1] - nav.index[0]).days
+        sta, end = nav.index[0], nav.index[-1]
 
-        ret_a = (1 + self.accumulative_return(nav)) ** (self.cycle[freq] / period)
+        period = (end - sta).days
+
+        ret_a = np.exp(self.accumulative_return(nav)) ** (self.cycle[freq] / period)
         return ret_a
 
     def odds(self, nav: pd.Series, bm: pd.Series) -> float:

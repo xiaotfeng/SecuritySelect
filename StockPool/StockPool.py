@@ -4,8 +4,9 @@ import numpy as np
 import os
 import sys
 import time
+from functools import reduce
 
-from constant import KeysName as K
+from SecuritySelect.constant import KeysName as K
 
 
 class StockPool(object):
@@ -15,6 +16,7 @@ class StockPool(object):
     """
 
     def __init__(self):
+        self.index_list = []
         pass
 
     # ST股标识
@@ -28,6 +30,7 @@ class StockPool(object):
         res = data[st]
         # 没有标记的记为正常股
         res.fillna(False, inplace=True)
+        self.index_list.append(res.index)
         return ~ res
 
     # 成立年限
@@ -46,6 +49,7 @@ class StockPool(object):
 
         res = (dt.datetime.now() - list_date) > np.timedelta64(days)
 
+        self.index_list.append(res.index)
         return res
 
     # 交易规模
@@ -57,14 +61,13 @@ class StockPool(object):
         """
         默认标记过去5个交易日日均成交额占比在后5%的股票
         合格股票标记为True"""
-        amount_mean = data[amount_name].groupby(as_index=True,
-                                                level=K.STOCK_ID.value).apply(
+        amount_mean = data[amount_name].groupby(K.STOCK_ID.value).apply(
             lambda x: x.rolling(days).mean())
 
         # 空值不参与计算
-        res = amount_mean.groupby(as_index=True,
-                                  level=K.TRADE_DATE.value).apply(lambda x: x.gt(x.quantile(proportion)))
+        res = amount_mean.groupby(K.TRADE_DATE.value).apply(lambda x: x.gt(x.quantile(proportion)))
 
+        self.index_list.append(res.index)
         return res
 
     # 停牌
@@ -80,12 +83,12 @@ class StockPool(object):
         合格股票标记为True
         """
 
-        trade_days = data[amount_name].groupby(as_index=True,
-                                               level=K.STOCK_ID.value).apply(
-            lambda x: x.rolling(days).count().fillna(method='bfill'))
+        trade_days = data[amount_name].groupby(K.STOCK_ID.value).apply(
+            lambda x: x.rolling(days, min_periods=days).count().fillna(method='bfill'))
 
         res = trade_days > days - frequency
 
+        self.index_list.append(res.index)
         return res
 
     def StockPool1(self,
@@ -99,38 +102,38 @@ class StockPool(object):
         注意：函数名需要与数据源文件名对应，保持一致防止出错，可自行修改
         :return:
         """
-        # get data file path
-        data_address = os.path.join(stock_pool_path, sys._getframe().f_code.co_name + '.csv')
+        result_path = os.path.join(stock_pool_path, sys._getframe().f_code.co_name + '_result.csv')
+        if os.path.exists(result_path):
+            index_effect_stock = pd.read_csv(result_path, index_col=[K.TRADE_DATE.value, K.STOCK_ID.value]).index
+        else:
+            # get data file path
+            data_address = os.path.join(stock_pool_path, sys._getframe().f_code.co_name + '.csv')
 
-        # read data
-        print(f"{dt.datetime.now().strftime('%X')}: Read the data of stock pool")
-        data_input = pd.read_csv(data_address)
-        data_input.set_index([K.TRADE_DATE.value, K.STOCK_ID.value], inplace=True)
+            # read data
+            print(f"{dt.datetime.now().strftime('%X')}: Read the data of stock pool")
+            data_input = pd.read_csv(data_address)
+            data_input.set_index([K.TRADE_DATE.value, K.STOCK_ID.value], inplace=True)
 
-        # get filter condition
-        print(f"{dt.datetime.now().strftime('%X')}: Weed out ST stock")
-        st_flag = self.ST(data_input)
+            # get filter condition
+            print(f"{dt.datetime.now().strftime('%X')}: Weed out ST stock")
+            self.ST(data_input)
 
-        print(f"{dt.datetime.now().strftime('%X')}: Weed out stock established in less than 3 months")
-        list_flag = self.established(data=data_input, days=90)
+            print(f"{dt.datetime.now().strftime('%X')}: Weed out stock established in less than 3 months")
+            self.established(data=data_input, days=90)
 
-        print(f"{dt.datetime.now().strftime('%X')}: Weed out stock illiquidity")
-        amount_flag = self.liquidity(data_input)
+            print(f"{dt.datetime.now().strftime('%X')}: Weed out stock illiquidity")
+            self.liquidity(data_input)
 
-        print(f"{dt.datetime.now().strftime('%X')}: Weed out suspension stock")
-        sus_flag = self.suspension(data_input)
+            print(f"{dt.datetime.now().strftime('%X')}: Weed out suspension stock")
+            self.suspension(data_input)
 
-        # effect_stock = set(st_flag[st_flag].index)
-        # Filter
-        effect_stock = \
-            set(st_flag[st_flag].index) & \
-            set(list_flag[list_flag].index) & \
-            set(amount_flag[amount_flag].index) & \
-            set(sus_flag[sus_flag].index)
+            # Filter
+            index_effect_stock = reduce(lambda x, y: x.intersection(y), self.index_list)
 
-        index_effect_stock = pd.Index(effect_stock, name=(K.TRADE_DATE.value, K.STOCK_ID.value))
-        # Sort
-        index_effect_stock = index_effect_stock.sort_values()
+            # Sort
+            index_effect_stock = index_effect_stock.sort_values()
+            # to_csv
+            index_effect_stock.to_frame().to_csv(result_path, index=False)
         return index_effect_stock
 
 
