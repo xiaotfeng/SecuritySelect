@@ -441,7 +441,7 @@ class FactorValidityCheck(object):
         #         G.group = index_[1]
         #         G.industry = row_[K.INDUSTRY_FLAG.value]
         #         Seq_list.append(G)
-        # 
+        #
         #     self.db.save_group_data(Seq_list)
 
         # plot
