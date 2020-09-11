@@ -23,6 +23,8 @@ class KeysName(Enum):
     HIGH = 'high'
     LOW = 'low'
 
+    ADJ_FACTOR = 'adjfactor'
+
     LIQ_MV = 'liq_mv'
     TOTAL_MV = 'total_mv'
 
@@ -50,8 +52,18 @@ class FileName(Enum):
 
 
 @unique
+class ExchangeName(Enum):
+    SSE = 'SSE'
+    SZSE = 'SZSE'
+
+
+@unique
 class FinancialName(Enum):
     Net_Pro = 'net_profit'
+    Total_Asset = 'total_asset'
+    Liq_Asset = 'liq_asset'
+    ILiq_asset = 'iliq_asset'
+    Net_Asset = 'shareholder_equity_ex'
 
 
 def timer(func):
@@ -70,7 +82,7 @@ def timer(func):
         rang_time = round((end - sta) / 60, 4)
         # range_mem = round((mem_start - mem_end) / 1024 / 1024 / 1024, 4)
 
-        print(f"{dt.datetime.now().strftime('%X')}: It takes \033[1;31m{rang_time}Min\033[0m to run func \'{func_name}\'")
+        print(f"{dt.datetime.now().strftime('%X')}: It takes \033[1;31m{rang_time}Min\033[0m to run func \'{func_name}\'\n")
 
     return wrapper
 
