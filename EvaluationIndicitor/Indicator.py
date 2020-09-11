@@ -34,24 +34,17 @@ class Indicator(object):
         sta, end = nav.index[0], nav.index[-1]
 
         period = (end - sta).days
-        if period == 0:
-            return 0
-        else:
-            ret_a = (self.accumulative_return(nav) + 1) ** (self.cycle[freq] / period) - 1
-            return ret_a
+
+        ret_a = np.exp(self.accumulative_return(nav)) ** (self.cycle[freq] / period)
+        return ret_a
 
     def odds(self, nav: pd.Series, bm: pd.Series) -> float:
 
         return sum(nav > bm) / len(nav)
 
     def std_a(self, nav: pd.Series, freq: str = 'D') -> float:
-
-        if len(nav.dropna()) <= 1:
-            return 0
-        else:
-            ret = np.log(nav / nav.shift(1))
-            std_a = np.std(ret, ddof=1) * (self.cycle[freq] ** .5)
-            return std_a
+        std_a = np.std(nav, ddof=1) * (self.cycle[freq] ** .5)
+        return std_a
 
     def max_retreat(self, nav: pd.Series):
         # 回撤结束时间点
@@ -63,10 +56,5 @@ class Indicator(object):
 
 
     def shape_a(self, nav: pd.Series, freq: str = "D") -> float:
-        ret_a = self.return_a(nav, freq=freq)
-        std_a = self.std_a(nav, freq="D")
-        if std_a == 0:
-            shape_a = 0
-        else:
-            shape_a = (ret_a - 0.03) / std_a
+        shape_a = (self.return_a(nav, freq=freq) - 0.03) / self.std_a(nav, freq="D")
         return shape_a

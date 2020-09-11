@@ -16,9 +16,7 @@ class FactorPreprocess(object):
     data_name = {'mv': 'mv.csv',
                  'industry': 'IndustryLabel.csv'}
 
-    preprocess_path_ = 'A:\\数据\\Preprocess'
-
-    def __init__(self, path_: str = preprocess_path_):
+    def __init__(self, path_: str = 'A:\\数据\\Preprocess'):
 
         self.data_path = path_
         self.fact_name = ''
@@ -61,10 +59,7 @@ class FactorPreprocess(object):
             if data_sub_.shape[0] < data_sub_.shape[1]:
                 fact_neu = pd.Series(data=np.nan, index=data_.index)
             else:
-                X = pd.get_dummies(data_sub_.loc[:, data_sub_.columns != self.fact_name],
-                                   columns=[K.INDUSTRY_FLAG.value])
-                Y = data_sub_[self.fact_name]
-                # X, Y = data_sub_.loc[:, data_sub_.columns != self.fact_name], data_sub_[self.fact_name]
+                X, Y = data_sub_.loc[:, data_sub_.columns != self.fact_name], data_sub_[self.fact_name]
                 reg = np.linalg.lstsq(X, Y)
                 residues = Y - (reg[0] * X).sum(axis=1)
                 fact_neu = pd.Series(data=residues, index=data_sub_.index)
@@ -94,8 +89,8 @@ class FactorPreprocess(object):
         else:
             industry_data = pd.DataFrame()
 
-        # merge data 缺失数据直接剔除
-        neu_factor = pd.concat([data, mv_data, industry_data], axis=1, join='inner')
+        # merge data
+        neu_factor = pd.concat([data, mv_data, industry_data], axis=1)
 
         # neutralization
         res = neu_factor.groupby(K.TRADE_DATE.value, group_keys=False).apply(lambda x: _reg(x))
@@ -346,4 +341,13 @@ class FactorPreprocess(object):
 
 if __name__ == '__main__':
     A = FactorPreprocess()
+    # A.neutralization('s', method='industry+mv')
+    # df_stock = pd.read_csv("D:\\Quant\\SecuritySelect\\Data\\AStockData.csv")
+    #
+    # # Data cleaning:Restoration stock price [open, high, low, close]
+    # price_columns = ['open', 'close', 'high', 'low']
+    # df_stock[price_columns] = df_stock[price_columns].multiply(df_stock['adjfactor'], axis=0)
+    #
+    # A = FactorProcessing()
+    # A.remove_outliers(df_stock['close'])
     pass

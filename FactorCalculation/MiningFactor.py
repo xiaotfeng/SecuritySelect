@@ -42,7 +42,8 @@ class GeneticFactor(object):
         # 最高价对前收盘价收益率
         cal_sub1 = data[[close_name, high_name]].groupby(K.STOCK_ID.value,
                                                          group_keys=False). \
-            apply(lambda x: x[high_name] / x[close_name].shift(1) - 1)
+            apply(lambda x:
+                  x[high_name] / x[close_name].shift(1) - 1)
 
         # 考虑负数无法开根号问题
         cal_sub2 = np.sign(cal_sub1) * np.sqrt(abs(cal_sub1))

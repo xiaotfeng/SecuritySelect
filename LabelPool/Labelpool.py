@@ -23,7 +23,8 @@ class LabelPool(object):
         :return:
         """
         stock_price.sort_index(inplace=True)
-        result = stock_price[return_type].groupby(K.STOCK_ID.value).apply(lambda x: x.shift(-1) / x - 1)
+        result = stock_price[return_type].groupby(as_index=True,
+                                                  level=K.STOCK_ID.value).apply(lambda x: np.log(x.shift(-1) / x))
 
         result.name = K.STOCK_RETURN.value
         return result
@@ -35,12 +36,12 @@ class LabelPool(object):
         生成行业权重
         如果某个行业权重为零则舍弃掉
         """
-        # ind_category = np.array(range(1, len(industry_exposure.columns) + 1))
-        # industry = pd.DataFrame(data=np.dot(industry_exposure, ind_category),
-        #                         index=industry_exposure.index,
-        #                         columns=[K.INDUSTRY_FLAG.value])
+        ind_category = np.array(range(1, len(industry_exposure.columns) + 1))
+        industry = pd.DataFrame(data=np.dot(industry_exposure, ind_category),
+                                index=industry_exposure.index,
+                                columns=[K.INDUSTRY_FLAG.value])
 
-        data_ = pd.concat([hs300_weight, industry_exposure], axis=1, join='inner')
+        data_ = pd.concat([hs300_weight, industry], axis=1, join='inner')
 
         # industry weight
         ind_weight = data_.groupby([K.TRADE_DATE.value, K.INDUSTRY_FLAG.value]).sum()
@@ -48,7 +49,7 @@ class LabelPool(object):
         ind_weight_new = ind_weight.unstack().reindex(index_).fillna(method='ffill').stack(dropna=False)
 
         # fill weight and industry
-        res_ = pd.merge(ind_weight_new.reset_index(), industry_exposure.reset_index(),
+        res_ = pd.merge(ind_weight_new.reset_index(), industry.reset_index(),
                         on=[K.TRADE_DATE.value, K.INDUSTRY_FLAG.value], how='right')
         res_.set_index(['date', 'stock_id'], inplace=True)
 

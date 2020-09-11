@@ -82,7 +82,7 @@ def timer(func):
         rang_time = round((end - sta) / 60, 4)
         # range_mem = round((mem_start - mem_end) / 1024 / 1024 / 1024, 4)
 
-        print(f"{dt.datetime.now().strftime('%X')}: It takes \033[1;31m{rang_time}Min\033[0m to run func \'{func_name}\'\n")
+        print(f"{dt.datetime.now().strftime('%X')}: It takes \033[1;31m{rang_time}Min\033[0m to run func \'{func_name}\'")
 
     return wrapper
 
