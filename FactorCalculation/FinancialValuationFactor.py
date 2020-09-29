@@ -9,11 +9,15 @@ import sys
 from ReadFile.GetData import SQL
 from SecuritySelect.FactorCalculation.FactorBase import FactorBase
 from SecuritySelect.constant import (
-    KeysName as KN,
-    FinancialName as FN
+    KeyName as KN,
+    PriceVolumeName as PVN,
+    FinancialBalanceSheetName as FBSN,
+    FinancialIncomeSheetName as FISN,
+    FinancialCashFlowSheetName as FCFSN
 )
 
 
+# 估值因子
 class FinancialValuationFactor(FactorBase):
     """408001000: 合并报表； 408006000：母公司报表 """
 
@@ -23,14 +27,14 @@ class FinancialValuationFactor(FactorBase):
     @classmethod
     def BP_ttm(cls,
                data: pd.DataFrame,
-               net_asset: str = FN.Net_Asset.value,
-               total_mv: str = KN.TOTAL_MV.value,
+               net_asset_ex: str = FBSN.Net_Asset_Ex.value,
+               total_mv: str = PVN.TOTAL_MV.value,
                switch: bool = False) -> pd.Series:
 
         data.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
-        bp_ttm = data[net_asset] / data[total_mv]
+        bp_ttm = data[net_asset_ex] / data[total_mv]
 
         bp_ttm.name = sys._getframe().f_code.co_name
         return bp_ttm
@@ -40,18 +44,18 @@ class FinancialValuationFactor(FactorBase):
                         sta: int = 20130101,
                         end: int = 20200401,
                         f_type: str = '408001000'):
-        sql_keys = {"BST": {"TOT_SHRHLDR_EQY_EXCL_MIN_INT": f"\"{FN.Net_Asset.value}\""}
+        sql_keys = {"BST": {"TOT_SHRHLDR_EQY_EXCL_MIN_INT": f"\"{FBSN.Net_Asset_Ex.value}\""}
                     }
 
         sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
         financial_data = cls().Q.query(sql_)
-        price_data = cls()._csv_data([KN.TOTAL_MV.value])
+        price_data = cls()._csv_data([PVN.TOTAL_MV.value])
 
-        financial_clean = cls()._cal_ttm(financial_data, FN.Net_Asset.value)
+        financial_clean = cls()._switch_ttm(financial_data, FBSN.Net_Asset_Ex.value)
 
         switch_fin = financial_clean.unstack()
         switch_fin = switch_fin.reindex(price_data[KN.TRADE_DATE.value].drop_duplicates().sort_values()).fillna(method='ffill').stack()
-        switch_fin.name = FN.Net_Asset.value
+        switch_fin.name = FBSN.Net_Asset_Ex.value
 
         price_data.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)
 

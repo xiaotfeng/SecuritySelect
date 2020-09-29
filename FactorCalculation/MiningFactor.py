@@ -8,7 +8,10 @@ import matplotlib.pyplot as plt
 from pyfinance.ols import PandasRollingOLS
 import warnings
 import time
-from SecuritySelect.constant import KeysName as K
+from SecuritySelect.constant import (
+    KeyName as KN,
+    PriceVolumeName as PVN
+)
 
 warnings.filterwarnings(action='ignore')
 
@@ -21,8 +24,8 @@ class GeneticFactor(object):
     @classmethod
     def alpha1_genetic_TFZZ(cls,
                             data: pd.DataFrame,
-                            high_name: str = 'high',
-                            close_name: str = 'close') -> pd.Series:
+                            high_name: str = PVN.HIGH.value,
+                            close_name: str = PVN.CLOSE.value) -> pd.Series:
         """
         alpha1因子来自: <<20200220-天风证券-基于基因表达式规划的价量因子挖掘>>
         alpha1计算公式：𝑙𝑜𝑔(𝑡𝑠_𝑖𝑛𝑐𝑣(𝑠𝑞𝑟𝑡(𝑠𝑢𝑏(𝑑𝑖𝑣(𝐻𝐼𝐺𝐻,𝑃𝑅𝐸𝐶𝐿𝑂𝑆𝐸),1)),20))
@@ -37,17 +40,17 @@ class GeneticFactor(object):
         """
 
         # 设置双重索引并且排序
-        data.set_index([K.TRADE_DATE.value, K.STOCK_ID.value], inplace=True)
+        data.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
         # 最高价对前收盘价收益率
-        cal_sub1 = data[[close_name, high_name]].groupby(K.STOCK_ID.value,
+        cal_sub1 = data[[close_name, high_name]].groupby(KN.STOCK_ID.value,
                                                          group_keys=False). \
             apply(lambda x:
                   x[high_name] / x[close_name].shift(1) - 1)
 
         # 考虑负数无法开根号问题
         cal_sub2 = np.sign(cal_sub1) * np.sqrt(abs(cal_sub1))
-        cal_sub3 = cal_sub2.groupby(K.STOCK_ID.value).apply(lambda x: x.rolling(20).mean() / x.rolling(20).std())
+        cal_sub3 = cal_sub2.groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(20).mean() / x.rolling(20).std())
         result = np.log(cal_sub3)
 
         # 将无限大值转化为NaN
@@ -59,11 +62,11 @@ class GeneticFactor(object):
     @classmethod
     def alpha2_genetic_TFZZ(cls,
                             data: pd.DataFrame,
-                            high_name: str = 'high',
-                            close_name: str = 'close',
-                            amount_name: str = 'amount',
-                            volume_name: str = 'volume',
-                            adj_factor_name: str = 'adjfactor') -> pd.Series:
+                            high_name: str = PVN.HIGH.value,
+                            close_name: str = PVN.CLOSE.value,
+                            amount_name: str = PVN.AMOUNT.value,
+                            volume_name: str = PVN.VOLUME.value,
+                            adj_factor_name: str = PVN.ADJ_FACTOR.value) -> pd.Series:
         """
         alpha2因子来自: <<20200220-天风证券-基于基因表达式规划的价量因子挖掘>>
         alpha2计算公式： 𝐴𝑙𝑝ℎ𝑎2: 𝑡𝑠_𝑟𝑒𝑔𝑏𝑒𝑡𝑎(𝑛𝑒𝑔(𝑠_𝑙𝑜𝑔(𝑠𝑢𝑏(𝑑𝑖𝑣(𝑉𝑊𝐴𝑃,𝑃𝑅𝐸𝐶𝐿𝑂𝑆𝐸),1))),
@@ -83,13 +86,13 @@ class GeneticFactor(object):
         :return:
         """
         # 设置双重索引并且排序
-        data.set_index([K.TRADE_DATE.value, K.STOCK_ID.value], inplace=True)
+        data.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
         data['VWAP'] = data[amount_name] / data[volume_name] * data[adj_factor_name]
 
         # 生成Y
-        cal_sub1 = data[[close_name, 'VWAP']].groupby(K.STOCK_ID.value,
+        cal_sub1 = data[[close_name, 'VWAP']].groupby(KN.STOCK_ID.value,
                                                       group_keys=False).apply(
             lambda x: x['VWAP'] / x[close_name].shift(1) - 1)
         cal_sub1 = cal_sub1.droplevel(0)
@@ -97,16 +100,16 @@ class GeneticFactor(object):
         data['reg_y'] = - np.sign(cal_sub1) * np.log(abs(cal_sub1))
 
         # 生成X
-        cal_sub2 = data[[high_name, 'VWAP']].groupby(K.STOCK_ID.value).apply(
+        cal_sub2 = data[[high_name, 'VWAP']].groupby(KN.STOCK_ID.value).apply(
             lambda x: x[high_name] / x[close_name].shift(1) - 1)
 
-        data['return_sta'] = cal_sub2.groupby(K.TRADE_DATE.value).apply(
+        data['return_sta'] = cal_sub2.groupby(KN.TRADE_DATE.value).apply(
             lambda x: (x - x.min()) / (x.max() - x.min()))
 
         # 处理无限大值
         data[np.isinf(data['return_sta'])] = np.nan
 
-        data['volume_sta'] = data[amount_name].groupby(K.TRADE_DATE.value).apply(
+        data['volume_sta'] = data[amount_name].groupby(KN.TRADE_DATE.value).apply(
             lambda x: (x - x.min()) / (x.max() - x.min()))
 
         # 处理无限大值
@@ -115,7 +118,7 @@ class GeneticFactor(object):
         data['reg_x'] = data[['return_sta', 'volume_sta']].min(axis=1, skipna=False)
 
         # 滚动回归
-        result = data[['reg_x', 'reg_y']].groupby(K.TRADE_DATE.value,
+        result = data[['reg_x', 'reg_y']].groupby(KN.TRADE_DATE.value,
                                                   group_keys=False).apply(
             lambda x: pd.Series(index=x.index) if len(x) < 20 else PandasRollingOLS(x=x['reg_x'],
                                                                                     y=x['reg_y'],
@@ -127,9 +130,9 @@ class GeneticFactor(object):
     @classmethod
     def alpha3_genetic_TFZZ(cls,
                             data: pd.DataFrame,
-                            amount_name: str = 'amount',
-                            liq_mv_name: str = 'liq_mv',
-                            close_name: str = 'close') -> pd.Series:
+                            amount_name: str = PVN.AMOUNT.value,
+                            liq_mv_name: str = PVN.LIQ_MV.value,
+                            close_name: str = PVN.CLOSE.value) -> pd.Series:
         """
 
         alpha3因子来自: <<20200220-天风证券-基于基因表达式规划的价量因子挖掘>>
@@ -143,20 +146,20 @@ class GeneticFactor(object):
         """
 
         # 设置双重索引并且排序
-        data.set_index(['date', 'code'], inplace=True)
+        data.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
         turnover = data[amount_name] / data[liq_mv_name]
 
-        data['close_7'] = data[close_name].groupby('code'). \
+        data['close_7'] = data[close_name].groupby(KN.STOCK_ID.value). \
             apply(lambda x: (x - x.rolling(7).min()) / (x.rolling(7).max() - x.rolling(7).min()))
         # 处理无限大值
         data[np.isinf(data['close_7'])] = np.nan
 
-        data['turn_rank'] = turnover.groupby(level='code').apply(lambda x: cls.rank_(x, 5))
+        data['turn_rank'] = turnover.groupby(KN.STOCK_ID.value).apply(lambda x: cls.rank_(x, 5))
 
         # 滚动计算相关性
-        result = data[['close_7', 'turn_rank']].groupby('code').apply(
+        result = data[['close_7', 'turn_rank']].groupby(KN.STOCK_ID.value).apply(
             lambda x: x['close_7'].rolling(15).corr(x['turn_rank']))
 
         # 将无限大值转化为NaN
@@ -169,8 +172,8 @@ class GeneticFactor(object):
     @classmethod
     def alpha4_genetic_TFZZ(cls,
                             data: pd.DataFrame,
-                            amount_name: str = 'amount',
-                            total_mv_name: str = 'total_mv') -> pd.Series:
+                            amount_name: str = PVN.AMOUNT.value,
+                            total_mv_name: str = PVN.TOTAL_MV.value) -> pd.Series:
         """
 
         alpha4因子来自: <<20200220-天风证券-基于基因表达式规划的价量因子挖掘>>
@@ -183,15 +186,15 @@ class GeneticFactor(object):
         :return:
         """
         # 设置双重索引并且排序
-        data.set_index(['date', 'code'], inplace=True)
+        data.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
         # 计算换手率
         turnover = data[amount_name] / data[total_mv_name]
-        cal_sub1 = turnover.groupby('code').apply(lambda x: x.rolling(15).max())
+        cal_sub1 = turnover.groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(15).max())
         cal_sub2 = np.log(cal_sub1)
         # 截面标准化
-        result = cal_sub2.groupby('date').apply(lambda x: (x - x.min()) / (x.max() - x.min()))
+        result = cal_sub2.groupby(KN.TRADE_DATE.value).apply(lambda x: (x - x.min()) / (x.max() - x.min()))
         # 处理无限大值
         result[np.isinf(result)] = np.nan
         result.name = sys._getframe().f_code.co_name
@@ -201,9 +204,9 @@ class GeneticFactor(object):
     @classmethod
     def alpha5_genetic_TFZZ(cls,
                             data: pd.DataFrame,
-                            high_name: str = 'high',
-                            close_name: str = 'close',
-                            amount_name: str = 'amount') -> pd.DataFrame:
+                            high_name: str = PVN.HIGH.value,
+                            close_name: str = PVN.CLOSE.value,
+                            amount_name: str = PVN.AMOUNT.value) -> pd.DataFrame:
         """
         alpha5因子来自: <<20200220-天风证券-基于基因表达式规划的价量因子挖掘>>
         alpha5计算公式： 𝐴𝑙𝑝ℎ𝑎5: 𝑡𝑠_𝑖𝑛𝑐𝑣(𝑠𝑐𝑎𝑙𝑒(𝑚𝑢𝑙(𝑠𝑢𝑏(𝑑𝑖𝑣(𝐻𝐼𝐺𝐻,𝑃𝑅𝐸𝐶𝐿𝑂𝑆𝐸),1),𝑡𝑠_𝑎𝑟𝑔𝑚𝑎𝑥(𝐴𝑀𝑂𝑈𝑁𝑇,5))),15)
@@ -217,19 +220,19 @@ class GeneticFactor(object):
         """
 
         # 设置双重索引并且排序
-        data.set_index(['date', 'code'], inplace=True)
+        data.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
-        cal_sub1 = data[[close_name, high_name]].groupby('code'). \
+        cal_sub1 = data[[close_name, high_name]].groupby(KN.STOCK_ID.value). \
             apply(lambda x: x[high_name] / x[close_name].shift(1) - 1)
 
         # 找最大值下标
-        cal_sub2 = data[amount_name].groupby(level='code').apply(lambda x: cls.max_index(x, n=5))
+        cal_sub2 = data[amount_name].groupby(KN.STOCK_ID.value).apply(lambda x: cls.max_index(x, n=5))
 
         cal_sub3 = cal_sub1 * cal_sub2
         # 截面归一化
-        cal_sub4 = cal_sub3.groupby(level='date').apply(lambda x: x / x.sum())
-        result = cal_sub4.groupby(level='code').apply(
+        cal_sub4 = cal_sub3.groupby(KN.TRADE_DATE.value).apply(lambda x: x / x.sum())
+        result = cal_sub4.groupby(KN.STOCK_ID.value).apply(
             lambda x: x.rolling(15).mean() / x.rolling(15).std())
 
         # 处理无限大值

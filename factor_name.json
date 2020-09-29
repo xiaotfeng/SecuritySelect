@@ -1,5 +1,91 @@
 {
+  "Category1": "1.成长类因子",
+
   "TA_G": "总资产增长率",
+  "LA_G": "流动资产增长率",
+  "ILA_G": "非流动资产增长率",
   "TA_G_std": "总资产增长率波动率",
-  "BP_TTM": "净资产（TTM）"
+  "LA_G_std": "流动资产增长率波动率",
+  "ILA_G_std": "非流动资产增长率波动率",
+
+  "NP_SD": "净利润稳健加速度",
+  "OP_SD": "营业利润稳健加速度",
+  "OR_SD": "营业收入稳健加速度",
+
+  "ROA_ttm": "总资产收益率（TTM）",
+
+
+  "Category2": "2.估值类因子",
+  "BP_ttM": "净资产（TTM）",
+
+
+  "Category3":"3.营运能力类因子",
+  "RROC_N": "营业能力改善",
+  "OCFA": "产能利用率",
+
+
+  "Category4": "4.偿债能力因子",
+
+  "Int_to_Asset": "有息负债率",
+
+  "ShortDebt1_CFPA": "短期偿债能力1",
+  "ShortDebt1_CFPA_qoq": "短期偿债能力1变化率",
+  "ShortDebt1_CFPA_qoq_abs": "短期偿债能力1稳定性1",
+  "ShortDebt1_CFPA_std": "短期偿债能力1稳定性2",
+
+  "ShortDebt2_CFPA": "短期偿债能力2",
+  "ShortDebt2_CFPA_qoq": "短期偿债能力2变化率",
+  "ShortDebt2_CFPA_qoq_abs": "短期偿债能力2稳定性1",
+  "ShortDebt2_CFPA_std": "短期偿债能力2稳定性2",
+
+  "ShortDebt3_CFPA": "短期偿债能力3",
+  "ShortDebt3_CFPA_qoq": "短期偿债能力3变化率",
+  "ShortDebt3_CFPA_qoq_abs": "短期偿债能力3稳定性1",
+  "ShortDebt3_CFPA_std": "短期偿债能力3稳定性2",
+
+  "IT_qoq_Z": "所得税变化稳定性",
+  "PTCF_qoq_Z": "各项税费变化稳定性",
+  "OT_qoq_Z": "税金及附加变化稳定性",
+  "OT2NP_qoq_Z": "税金及附加占净利润环比变化稳定性",
+  "PT2NA_Z": "净应交税费率",
+
+  "Category5": "5.收益质量因子",
+
+  "CSRD": "收现比变动",
+
+
+  "Category6": "6.动量因子",
+
+  "MTM_gen_1": "动量因子（收盘价1）",
+  "MTM_gen_2": "动量因子（收盘价2）",
+  "MTM_gen_3": "动量因子（收盘价3）",
+  "MTM_gen_20": "动量因子（收盘价20）",
+  "MTM_gen_60": "动量因子（收盘价60）",
+
+  "MTM_bt_day_1": "动量因子（日间1）",
+  "MTM_bt_day_2": "动量因子（日间2）",
+  "MTM_bt_day_3": "动量因子（日间3）",
+  "MTM_bt_day_20": "动量因子（日间20）",
+  "MTM_bt_day_60": "动量因子（日间60）",
+
+  "MTM_in_day_1": "动量因子（日内1）",
+  "MTM_in_day_2": "动量因子（日内2）",
+  "MTM_in_day_3": "动量因子（日内3）",
+  "MTM_in_day_20": "动量因子（日内20）",
+  "MTM_in_day_60": "动量因子（日内60）",
+
+  "MTM_N_P_1": "趋势动量因子（收盘价1）",
+  "MTM_N_P_2": "趋势动量因子（收盘价2）",
+  "MTM_N_P_3": "趋势动量因子（收盘价3）",
+  "MTM_N_P_20": "趋势动量因子（收盘价20）",
+  "MTM_N_P_60": "趋势动量因子（收盘价60）",
+
+
+  "Category7": "7.盈利能力因子",
+
+  "DPR_ttm": "股利支付率（TTM）",
+  "NP": "当期净利润率",
+  "NP_ttm": "净利润率（TTM）",
+  "OPM": "当期营业利润率",
+  "OPM_ttm": "营业利润率（TTM）"
 }

@@ -35,8 +35,11 @@ class Indicator(object):
 
         period = (end - sta).days
 
-        ret_a = np.exp(self.accumulative_return(nav)) ** (self.cycle[freq] / period)
-        return ret_a
+        if period == 0:
+            return None
+        else:
+            ret_a = np.exp(self.accumulative_return(nav)) ** (self.cycle[freq] / period)
+            return ret_a
 
     def odds(self, nav: pd.Series, bm: pd.Series) -> float:
 

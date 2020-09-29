@@ -7,21 +7,25 @@ import pandas as pd
 import numpy as np
 import os
 import sys
+import copy
 
 from ReadFile.GetData import SQL
+from SecuritySelect.Object import FactorInfo
 from SecuritySelect.constant import (
-    KeysName as KN,
+    KeyName as KN,
+    SpecialName as SN,
+    FilePathName as FPN,
     ExchangeName as EN
 )
 
 
 class FactorBase(object):
-    factor_pool_path_ = 'A:\\数据\\FactorPool\\'
-    fundamental_data = 'Fundamental_data.csv'
 
     def __init__(self):
         self.Q = SQL()
+        self.list_date = SQL().query(SQL().list_date_SQL())
 
+    # 财务数据转换，需要考虑未来数据
     def _switch_freq(self,  # TODO 用因子值索引进行检索
                      data_: pd.Series,
                      date_sta: str = '20130101',
@@ -36,15 +40,16 @@ class FactorBase(object):
 
         return res
 
-    def _csv_data(self, data_name: list):
-        res = pd.read_csv(os.path.join(self.factor_pool_path_, self.fundamental_data),
+    def _csv_data(self, data_name: list, file_name: str = "FactorPool1", ):
+        res = pd.read_csv(os.path.join(FPN.factor_inputData.value, file_name + '.csv'),
                           usecols=[KN.TRADE_DATE.value, KN.STOCK_ID.value] + data_name)
         return res
 
-    def _cal_ttm(self, data_: pd.DataFrame, name: str):
+    def _switch_ttm(self, data_: pd.DataFrame, name: str):
         """
         计算TTM
         """
+        data_copy = copy.deepcopy(data_)
 
         def _pros(data_sub: pd.DataFrame, name_: str):
             # print(data_sub.index[0][-1])
@@ -58,10 +63,12 @@ class FactorBase(object):
             res_ = res_.droplevel(level='stock_id').sort_index().rolling(4).sum()
             return res_
 
-        data_['month'] = data_[KN.TRADE_DATE.value].apply(lambda x: x[5:7])
-        data_.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)
+        # TODO 日期改为报告期
+        data_copy['month'] = data_copy[SN.REPORT_DATE.value].apply(lambda x: x[5:7])
+        data_copy.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
 
-        res = data_[[name, 'month']].groupby(KN.STOCK_ID.value).apply(_pros, name)
+        res = data_copy[[name, 'month']].groupby(KN.STOCK_ID.value).apply(_pros, name)
 
         res.index = res.index.swaplevel(0, 1)
+        res.name = name
         return res

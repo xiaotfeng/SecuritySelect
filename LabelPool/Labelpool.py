@@ -5,17 +5,19 @@ import datetime as dt
 import time
 import sys
 
-from SecuritySelect.constant import KeysName as K
+from SecuritySelect.constant import (
+    KeyName as KN,
+    PriceVolumeName as PVN,
+    FilePathName as FPN,
+    SpecialName as SN
+)
 
 
 class LabelPool(object):
 
-    def __init__(self):
-        pass
-
-    def stock_return(self,
+    def stock_return(self,  # 不同的价格计算如何处理（未来数据！） TODO
                      stock_price: pd.DataFrame,
-                     return_type: str = 'open') -> pd.Series:
+                     return_type: str = PVN.OPEN.value) -> pd.Series:
         """
         采用开盘价计算收益率，作为预测标签需放置到前一天
         :param stock_price: 股票价格表
@@ -24,9 +26,9 @@ class LabelPool(object):
         """
         stock_price.sort_index(inplace=True)
         result = stock_price[return_type].groupby(as_index=True,
-                                                  level=K.STOCK_ID.value).apply(lambda x: np.log(x.shift(-1) / x))
+                                                  level=KN.STOCK_ID.value).apply(lambda x: x.shift(-2) / x.shift(-1) - 1)
 
-        result.name = K.STOCK_RETURN.value
+        result.name = PVN.STOCK_RETURN.value
         return result
 
     def hs300_industry_weight(self,
@@ -39,21 +41,21 @@ class LabelPool(object):
         ind_category = np.array(range(1, len(industry_exposure.columns) + 1))
         industry = pd.DataFrame(data=np.dot(industry_exposure, ind_category),
                                 index=industry_exposure.index,
-                                columns=[K.INDUSTRY_FLAG.value])
+                                columns=[SN.INDUSTRY_FLAG.value])
 
         data_ = pd.concat([hs300_weight, industry], axis=1, join='inner')
 
         # industry weight
-        ind_weight = data_.groupby([K.TRADE_DATE.value, K.INDUSTRY_FLAG.value]).sum()
-        index_ = industry_exposure.index.get_level_values(K.TRADE_DATE.value).drop_duplicates()
+        ind_weight = data_.groupby([KN.TRADE_DATE.value, SN.INDUSTRY_FLAG.value]).sum()
+        index_ = industry_exposure.index.get_level_values(KN.TRADE_DATE.value).drop_duplicates()
         ind_weight_new = ind_weight.unstack().reindex(index_).fillna(method='ffill').stack(dropna=False)
 
         # fill weight and industry
         res_ = pd.merge(ind_weight_new.reset_index(), industry.reset_index(),
-                        on=[K.TRADE_DATE.value, K.INDUSTRY_FLAG.value], how='right')
+                        on=[KN.TRADE_DATE.value, SN.INDUSTRY_FLAG.value], how='right')
         res_.set_index(['date', 'stock_id'], inplace=True)
 
-        return res_[K.CSI_300_INDUSTRY_WEIGHT.value]
+        return res_[SN.CSI_300_INDUSTRY_WEIGHT.value]
 
     def merge_labels(self, **kwargs) -> pd.DataFrame:
         """
@@ -65,18 +67,17 @@ class LabelPool(object):
 
         return res
 
-    def LabelPool1(self,
-                   label_pool_path: str):
+    def LabelPool1(self):
 
-        result_path = os.path.join(label_pool_path, sys._getframe().f_code.co_name + '_result.csv')
+        result_path = os.path.join(FPN.label_pool_path.value, sys._getframe().f_code.co_name + '_result.csv')
         if os.path.exists(result_path):
-            category_label = pd.read_csv(result_path, index_col=[K.TRADE_DATE.value, K.STOCK_ID.value])
+            category_label = pd.read_csv(result_path, index_col=[KN.TRADE_DATE.value, KN.STOCK_ID.value])
         else:
             # get data file path
-            price_address = os.path.join(label_pool_path, 'StockPrice.csv')
-            industry_address = os.path.join(label_pool_path, 'IndustryLabel.csv')
-            composition_address = os.path.join(label_pool_path, 'ConstituentStocks_new.csv')
-            hs300_weight_address = os.path.join(label_pool_path, 'HS300Weight.csv')
+            price_address = os.path.join(FPN.label_pool_path.value, 'StockPrice.csv')
+            industry_address = os.path.join(FPN.label_pool_path.value, 'IndustryLabel.csv')
+            composition_address = os.path.join(FPN.label_pool_path.value, 'ConstituentStocks_new.csv')
+            hs300_weight_address = os.path.join(FPN.label_pool_path.value, 'HS300Weight.csv')
 
             # read data
             print(f"{dt.datetime.now().strftime('%X')}: Read the data of label")
@@ -87,13 +88,13 @@ class LabelPool(object):
             hs300_weight_data = pd.read_csv(hs300_weight_address)
 
             # set MultiIndex
-            price_data.set_index([K.TRADE_DATE.value, K.STOCK_ID.value], inplace=True)
-            industry_data.set_index([K.TRADE_DATE.value, K.STOCK_ID.value], inplace=True)
-            composition_data.set_index([K.TRADE_DATE.value, K.STOCK_ID.value], inplace=True)
-            hs300_weight_data.set_index([K.TRADE_DATE.value, K.STOCK_ID.value], inplace=True)
+            price_data.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)
+            industry_data.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)
+            composition_data.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)
+            hs300_weight_data.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)
 
             print(f"{dt.datetime.now().strftime('%X')}: calculate stock daily return label")
-            stock_return = self.stock_return(price_data, return_type=K.OPEN.value)
+            stock_return = self.stock_return(price_data, return_type=PVN.OPEN.value)
             print(f"{dt.datetime.now().strftime('%X')}: Generate the industry weight of CSI 300 component stocks")
             industry_weight_hs300 = self.hs300_industry_weight(hs300_weight_data, industry_data)
             # industry_weight_hs300 = hs300_weight_data

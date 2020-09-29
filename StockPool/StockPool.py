@@ -6,7 +6,11 @@ import sys
 import time
 from functools import reduce
 
-from SecuritySelect.constant import KeysName as K
+from SecuritySelect.constant import (
+    KeyName as KN,
+    FilePathName as FPN,
+    PriceVolumeName as PVN,
+)
 
 
 class StockPool(object):
@@ -55,17 +59,17 @@ class StockPool(object):
     # 交易规模
     def liquidity(self,
                   data: pd.DataFrame,
-                  amount_name: str = 'amount',
+                  amount_name: str = PVN.AMOUNT.value,
                   days: int = 5,
                   proportion: float = 0.05) -> pd.Series(bool):
         """
         默认标记过去5个交易日日均成交额占比在后5%的股票
         合格股票标记为True"""
-        amount_mean = data[amount_name].groupby(K.STOCK_ID.value).apply(
+        amount_mean = data[amount_name].groupby(KN.STOCK_ID.value).apply(
             lambda x: x.rolling(days).mean())
 
         # 空值不参与计算
-        res = amount_mean.groupby(K.TRADE_DATE.value).apply(lambda x: x.gt(x.quantile(proportion)))
+        res = amount_mean.groupby(KN.TRADE_DATE.value).apply(lambda x: x.gt(x.quantile(proportion)))
 
         self.index_list.append(res.index)
         return res
@@ -73,7 +77,7 @@ class StockPool(object):
     # 停牌
     def suspension(self,
                    data: pd.DataFrame,
-                   amount_name: str = 'amount',
+                   amount_name: str = PVN.AMOUNT.value,
                    days: int = 5,
                    frequency: int = 3) -> pd.Series(bool):
         """
@@ -83,7 +87,7 @@ class StockPool(object):
         合格股票标记为True
         """
 
-        trade_days = data[amount_name].groupby(K.STOCK_ID.value).apply(
+        trade_days = data[amount_name].groupby(KN.STOCK_ID.value).apply(
             lambda x: x.rolling(days, min_periods=days).count().fillna(method='bfill'))
 
         res = trade_days > days - frequency
@@ -91,8 +95,7 @@ class StockPool(object):
         self.index_list.append(res.index)
         return res
 
-    def StockPool1(self,
-                   stock_pool_path: str) -> pd.Index:
+    def StockPool1(self) -> pd.Index:
         """
         1.剔除ST股：是ST为True
         2.剔除成立年限小于6个月的股票：成立年限小于6个月为False
@@ -102,17 +105,17 @@ class StockPool(object):
         注意：函数名需要与数据源文件名对应，保持一致防止出错，可自行修改
         :return:
         """
-        result_path = os.path.join(stock_pool_path, sys._getframe().f_code.co_name + '_result.csv')
+        result_path = os.path.join(FPN.stock_pool_path.value, sys._getframe().f_code.co_name + '_result.csv')
         if os.path.exists(result_path):
-            index_effect_stock = pd.read_csv(result_path, index_col=[K.TRADE_DATE.value, K.STOCK_ID.value]).index
+            index_effect_stock = pd.read_csv(result_path, index_col=[KN.TRADE_DATE.value, KN.STOCK_ID.value]).index
         else:
             # get data file path
-            data_address = os.path.join(stock_pool_path, sys._getframe().f_code.co_name + '.csv')
+            data_address = os.path.join(FPN.stock_pool_path.value, sys._getframe().f_code.co_name + '.csv')
 
             # read data
             print(f"{dt.datetime.now().strftime('%X')}: Read the data of stock pool")
             data_input = pd.read_csv(data_address)
-            data_input.set_index([K.TRADE_DATE.value, K.STOCK_ID.value], inplace=True)
+            data_input.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)
 
             # get filter condition
             print(f"{dt.datetime.now().strftime('%X')}: Weed out ST stock")
@@ -146,4 +149,4 @@ if __name__ == '__main__':
     # stock_pool[price_columns] = stock_pool[price_columns].multiply(stock_pool['adjfactor'], axis=0)
     # df_stock.set_index('date', inplace=True)
     A = StockPool()
-    A.StockPool1(path)
+    A.StockPool1()

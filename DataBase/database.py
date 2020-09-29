@@ -5,10 +5,10 @@
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Sequence, TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable
 
 if TYPE_CHECKING:
-    from .object import GroupData, FactorData
+    from SecuritySelect.Object import GroupData, FactorData, FactorRetData
 
 
 class Driver(Enum):
@@ -23,13 +23,44 @@ class BaseDatabaseManager(ABC):
     @abstractmethod
     def save_group_data(
             self,
-            datas: Sequence["GroupData"],
+            datas: Iterable["GroupData"]
+    ):
+        pass
+
+    @abstractmethod
+    def save_fact_ret_data(
+            self,
+            datas: Iterable["FactorRetData"]
     ):
         pass
 
     @abstractmethod
     def save_factor_data(
             self,
-            datas: Sequence["FactorData"]
+            datas: Iterable["FactorData"],
+            db_name: str
     ):
         pass
+
+    @abstractmethod
+    def check_group_data(self, factor_name: str):
+        pass
+
+    @abstractmethod
+    def check_fact_ret_data(self, factor_name: str):
+        pass
+
+    @abstractmethod
+    def check_factor_data(self, factor_name: str, db_name: str):
+        pass
+
+    @abstractmethod
+    def clean(self, factor_name: str):
+        pass
+
+    # @abstractmethod
+    # def save_factor_return_res(
+    #         self,
+    #         datas: Iterable["retData"]
+    # ):
+    #     pass

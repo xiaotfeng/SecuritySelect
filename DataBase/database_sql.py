@@ -4,11 +4,9 @@
 # @Email:  18817289038@163.com
 
 from datetime import datetime
-from typing import List, Sequence, Type
-from .object import GroupData, FactorData
-from SecuritySelect.constant import (
-    KeysName as KN,
-)
+import time
+from typing import List, Type, Iterable, Dict
+from SecuritySelect.Object import GroupData, FactorData, FactorRetData
 from peewee import (
     AutoField,
     CharField,
@@ -24,6 +22,7 @@ from peewee import (
 
 from SecuritySelect.DataBase.database import BaseDatabaseManager, Driver
 
+model_mapping = {"Group": GroupData}
 
 
 def init(driver: Driver, settings: dict):
@@ -34,8 +33,8 @@ def init(driver: Driver, settings: dict):
     assert driver in init_funcs
 
     db = init_funcs[driver](settings)
-    Group, Factor = init_models(db, driver)
-    return SqlManager(Group, Factor)
+    DB_dict = init_models(db, driver)
+    return SqlManager(DB_dict)
 
 
 def init_mysql(settings: dict):
@@ -59,53 +58,55 @@ class ModelBase(Model):
 
 
 def init_models(db: Database, driver: Driver):
-
-    class DbFactorData(ModelBase):
+    class DBFactorRetData(ModelBase):
         """
-        Candlestick bar data for database storage.
-        Index is defined unique with datetime, interval, symbol
-        """
+                Candlestick bar data for database storage.
+                Index is defined unique with datetime, interval, symbol
+                """
 
         id = AutoField()
-        stock_id: str = CharField()
+
         date: datetime = DateTimeField()
 
-        factor_category: str = CharField()
+        factor_return: float = FloatField()
+        factor_T: float = FloatField(null=True)
         factor_name: str = CharField()
-        factor_value: float = FloatField()
+        factor_name_chinese: str = CharField()
+        ret_type: str = CharField()
 
         datetime_update: datetime = DateTimeField()
 
         class Meta:
             database = db
-            indexes = ((("stock_id", "date", "factor_category", "factor_name"), True),)
+            indexes = ((("date", "factor_name", "ret_type"), True),)
 
         @staticmethod
-        def from_factor(factor):
+        def from_ret(ret: FactorRetData):
             """
-            Generate DbFactorData object from FactorData.
-            """
-            db_bar = DbFactorData()
+                        Generate DbBarData object from BarData.
+                        """
+            db_bar = DBFactorRetData()
 
-            db_bar.stock_id = factor.stock_id
-            db_bar.date = factor.date
+            db_bar.date = ret.date
 
-            db_bar.factor_category = factor.factor_category
-            db_bar.factor_name = factor.factor_name
-            db_bar.factor_value = factor.factor_value
-
+            db_bar.factor_return = ret.factor_return
+            db_bar.factor_T = ret.factor_T
+            db_bar.factor_name = ret.factor_name
+            db_bar.factor_name_chinese = ret.factor_name_chinese
+            db_bar.ret_type = ret.ret_type
             db_bar.datetime_update = datetime.now()
+
             return db_bar
 
         def to_bar(self):
             """
             Generate GroupData object from DbGroupData.
             """
-            factor = FactorData()
-            return factor
+            Ret = FactorRetData()
+            return Ret
 
         @staticmethod
-        def save_all(objs: List["DbFactorData"]):
+        def save_all(objs: List["DBFactorRetData"]):
             """
             save a list of objects, update if exists.
             """
@@ -113,19 +114,19 @@ def init_models(db: Database, driver: Driver):
             with db.atomic():
                 if driver is Driver.POSTGRESQL:
                     for bar in dicts:
-                        DbFactorData.insert(bar).on_conflict(
+                        DBFactorRetData.insert(bar).on_conflict(
                             update=bar,
                             conflict_target=(
-                                DbFactorData.stock_id,
-                                DbFactorData.date,
+                                DBFactorRetData.stock_id,
+                                DBFactorRetData.date,
                             ),
                         ).execute()
                 else:
-                    for c in chunked(dicts, 50):
-                        DbFactorData.insert_many(
-                            c).on_conflict_replace().execute()
+                    for c in chunked(dicts, 1000):
+                        DBFactorRetData.insert_many(c).on_conflict_replace().execute()
+        pass
 
-    class DbGroupData(ModelBase):
+    class DbFactorGroupData(ModelBase):
         """
         Candlestick bar data for database storage.
         Index is defined unique with datetime, interval, symbol
@@ -140,7 +141,9 @@ def init_models(db: Database, driver: Driver):
 
         stock_return: float = FloatField()
         factor_name: str = CharField()
-        factor_value: float = FloatField()
+        factor_name_chinese: str = CharField()
+        factor_value: float = FloatField(null=True)
+        factor_type: str = CharField()
 
         datetime_update: datetime = DateTimeField()
 
@@ -149,20 +152,24 @@ def init_models(db: Database, driver: Driver):
             indexes = ((("stock_id", "date", "factor_name"), True),)
 
         @staticmethod
-        def from_group(group):
+        def from_group(group: GroupData):
             """
                         Generate DbBarData object from BarData.
                         """
-            db_bar = DbGroupData()
+            db_bar = DbFactorGroupData()
 
             db_bar.stock_id = group.stock_id
             db_bar.date = group.date
+
             db_bar.industry = group.industry
             db_bar.group = group.group
 
             db_bar.stock_return = group.stock_return
             db_bar.factor_name = group.factor_name
             db_bar.factor_value = group.factor_value
+            db_bar.factor_name_chinese = group.factor_name_chinese
+            db_bar.factor_type = group.factor_type
+
             db_bar.datetime_update = datetime.now()
 
             return db_bar
@@ -175,7 +182,7 @@ def init_models(db: Database, driver: Driver):
             return group
 
         @staticmethod
-        def save_all(objs: List["DbGroupData"]):
+        def save_all(objs: List["DbFactorGroupData"]):
             """
             save a list of objects, update if exists.
             """
@@ -183,40 +190,161 @@ def init_models(db: Database, driver: Driver):
             with db.atomic():
                 if driver is Driver.POSTGRESQL:
                     for bar in dicts:
-                        DbGroupData.insert(bar).on_conflict(
+                        DbFactorGroupData.insert(bar).on_conflict(
                             update=bar,
                             conflict_target=(
-                                DbGroupData.stock_id,
-                                DbGroupData.date,
+                                DbFactorGroupData.stock_id,
+                                DbFactorGroupData.date,
                             ),
                         ).execute()
                 else:
-                    for c in chunked(dicts, 50):
-                        DbGroupData.insert_many(
-                            c).on_conflict_replace().execute()
+                    for c in chunked(dicts, 1000):
+                        DbFactorGroupData.insert_many(c).on_conflict_replace().execute()
+
+    class DbFactFinData(ModelBase):
+        """
+        Candlestick bar data for database storage.
+        Index is defined unique with datetime, interval, symbol
+        """
+
+        id = AutoField()
+        stock_id: str = CharField(max_length=10)
+        date: datetime = DateTimeField()
+        date_report: datetime = DateTimeField()
+
+        factor_category: str = CharField(max_length=50)
+        factor_name: str = CharField(max_length=50)
+        factor_name_chinese: str = CharField()
+        factor_value: float = FloatField(null=True)
+        factor_type: str = CharField(max_length=20)
+
+        datetime_update: datetime = DateTimeField()
+
+        class Meta:
+            database = db
+            indexes = ((("stock_id", "date", "factor_category", "factor_name", "factor_type"), True),)
+
+        @staticmethod
+        def from_factor(factor: FactorData, DataClass: type) -> "ModelBase":
+            """
+            Generate DbFactorData object from FactorData.
+            """
+
+            db_bar = DataClass()
+
+            db_bar.stock_id = factor.stock_id
+            db_bar.date = factor.date  # 公布期
+            db_bar.date_report = factor.date_report  # 报告期
+
+            db_bar.factor_category = factor.factor_category
+            db_bar.factor_name = factor.factor_name
+            db_bar.factor_name_chinese = factor.factor_name_chinese
+            db_bar.factor_value = factor.factor_value
+            db_bar.factor_type = factor.factor_type
+
+            db_bar.datetime_update = datetime.now()
+
+            return db_bar
+
+        def to_bar(self):
+            """
+            Generate GroupData object from DbGroupData.
+            """
+            factor = FactorData()
+            return factor
+
+        @staticmethod
+        def save_all(objs: List[ModelBase], DataClass: ModelBase):
+            """
+            save a list of objects, update if exists.
+            """
+            dicts = map(lambda x: x.to_dict(), objs)
+            with db.atomic():
+                if driver is Driver.POSTGRESQL:
+                    for bar in dicts:
+                        DataClass.insert(bar).on_conflict(
+                            update=bar,
+                            conflict_target=(
+                                DataClass.stock_id,
+                                DataClass.date,
+                            ),
+                        ).execute()
+                else:
+                    i = 1
+                    num = 5000
+                    for c in chunked(dicts, num):
+                        sta = time.time()
+                        print(f"Insert data to database {DataClass.__name__}: {i}-{i + num - 1}")
+                        DataClass.insert_many(c).on_conflict_replace().execute()
+                        print(time.time() - sta)
+                        i += num
+            # print("s")
+
+    class DBFactMTMData(DbFactFinData):
+        pass
+
+    class DBFactGenProData(DbFactFinData):
+        pass
 
     if not db.autoconnect:
         db.connect()
 
-    db.create_tables([DbGroupData])
-    db.create_tables([DbFactorData])
-    return DbGroupData, DbFactorData
+    db.create_tables([DBFactorRetData])
+    db.create_tables([DbFactorGroupData])
+    db.create_tables([DbFactFinData])
+    db.create_tables([DBFactMTMData])
+    db.create_tables([DBFactGenProData])
+
+    mapping = {"Ret": DBFactorRetData,
+               "Group": DbFactorGroupData,
+               "Fin": DbFactFinData,
+               "MTM": DBFactMTMData,
+               "GenPro": DBFactGenProData}
+
+    return mapping
 
 
 class SqlManager(BaseDatabaseManager):
+    DB_name = ["Ret", "Group", "Fin", "MTM", "GenPro", "IC", "Return"]
 
-    def __init__(self, class_group: Type[Model], class_factor: Type[Model]):
-        self.class_group = class_group
-        self.class_factor = class_factor
+    def __init__(self, class_dict: Dict[str, Type[Model]]):
+        for key_, value_ in class_dict.items():
+            setattr(self, key_, value_)
 
-    def save_factor_data(self, datas: Sequence[GroupData]):
-        ds = [self.class_factor.from_factor(i) for i in datas]
-        self.class_factor.save_all(ds)
+    def save_factor_data(self, datas: Iterable[FactorData], db_name: str):
 
-    def save_group_data(self, datas: Sequence[GroupData]):
-        ds = [self.class_group.from_group(i) for i in datas]
-        self.class_group.save_all(ds)
+        model = getattr(self, db_name)
+        ds = map(lambda x: model.from_factor(x, model), datas)
+        model.save_all(ds, model)
 
+    def save_group_data(self, datas: Iterable[GroupData]):
+        model = getattr(self, "Group")
+        ds = map(lambda x: model.from_group(x), datas)
+        model.save_all(ds)
 
+    def save_fact_ret_data(self, datas: Iterable[FactorRetData]):
+        model = getattr(self, "Ret")
+        ds = map(lambda x: model.from_ret(x), datas)
+        model.save_all(ds)
 
+    # check whether the field exists
+    def check_group_data(self, factor_name: str):
+        model = getattr(self, "Group")
+        data_object = model.select().where(model.factor_name == factor_name)
+        return False if data_object.__len__() == 0 else True
 
+    def check_factor_data(self, factor_name: str, db_name: str):
+        model = getattr(self, db_name)
+        data_object = model.select().where(model.factor_name == factor_name)
+        return False if data_object.__len__() == 0 else True
+
+    def check_fact_ret_data(self, factor_name: str):
+        model = getattr(self, "Ret")
+        data_object = model.select().where(model.factor_name == factor_name)
+        return False if data_object.__len__() == 0 else True
+
+    # Clear existing fields
+    def clean(self, factor_name: str):
+        for name_ in self.DB_name:
+            model = getattr(self, name_)
+            model.delete().where(model.factor_name == factor_name).execute()
