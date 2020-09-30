@@ -796,7 +796,7 @@ class FinancialSolvencyFactor(FactorBase):
     def PT2NA_Z(cls,
                 data: pd.DataFrame,
                 tax_payable: str = FBSN.Tax_Payable.value,
-                net_asset: str = FBSN.Net_Asset_Ex.value,
+                net_asset_in: str = FBSN.Net_Asset_In.value,
                 quarter: int = 8,
                 switch: bool = False):
         func_name = sys._getframe().f_code.co_name
@@ -804,9 +804,9 @@ class FinancialSolvencyFactor(FactorBase):
         data.sort_index(inplace=True)
 
         # 部分会计科目若缺失填充零
-        data.loc[:, data.columns != net_asset] = data.loc[:, data.columns != net_asset].fillna(0)
+        data.loc[:, data.columns != net_asset_in] = data.loc[:, data.columns != net_asset_in].fillna(0)
 
-        data["PT2NA"] = data[tax_payable] / data[net_asset]
+        data["PT2NA"] = data[tax_payable] / data[net_asset_in]
         data["PT2NA_mean"] = data["PT2NA"].groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(quarter).mean())
         data["PT2NA_std"] = data["PT2NA"].groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(quarter).std())
         data[func_name] = (data["PT2NA"] - data["PT2NA_mean"]) / data["PT2NA_std"]
@@ -1276,7 +1276,7 @@ class FinancialSolvencyFactor(FactorBase):
                          end: int = 20200401,
                          f_type: str = '408001000'):
         sql_keys = {"BST": {"TAXES_SURCHARGES_PAYABLE": f"\"{FBSN.Tax_Payable.value}\"",
-                            "TOT_SHRHLDR_EQY_EXCL_MIN_INT": f"\"{FBSN.Net_Asset_Ex.value}\""
+                            "TOT_SHRHLDR_EQY_INCL_MIN_INT": f"\"{FBSN.Net_Asset_In.value}\""
                             }
                     }
         sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)

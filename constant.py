@@ -84,10 +84,12 @@ class FinancialBalanceSheetName(Enum):
 
     Total_Lia = 'total_liability'  # 总负债
 
+    Actual_Capital = 'actual_capital'
     Surplus_Reserves = 'surplus_reserves'  # 盈余公积
     Undistributed_Profit = 'undistributed_profit'  # 未分配利润
 
     Net_Asset_Ex = 'shareholder_equity_ex'  # （不含少数股东权益）净资产
+    Net_Asset_In = 'shareholder_equity_in'  # （含少数股东权益）净资产
 
 
 @unique
@@ -112,6 +114,8 @@ class FinancialCashFlowSheetName(Enum):
     All_Tax = 'tax_all'  # 支付的各项税费
 
     Cash_From_Sales = 'cash_sales'  # 销售商品、提供劳务收到的现金
+
+    Free_Cash_Flow = 'FCFF'  # 自由现金流
 
 
 def timer(func):

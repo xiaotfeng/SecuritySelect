@@ -27,17 +27,33 @@ class FactorBase(object):
 
     # 财务数据转换，需要考虑未来数据
     def _switch_freq(self,  # TODO 用因子值索引进行检索
-                     data_: pd.Series,
+                     data_: pd.DataFrame,
+                     name: str,
+                     limit: int = 60,
                      date_sta: str = '20130101',
                      date_end: str = '20200401',
                      exchange: str = EN.SSE.value) -> pd.Series:
-        sql_ = self.Q.trade_date_SQL(date_sta=date_sta,
-                                     date_end=date_end,
-                                     exchange=exchange)
-        trade_date = self.Q.query(sql_)
+        def _reindex(data: pd.DataFrame, name_: str):
+            data_re = pd.merge(data, trade_date, on=KN.TRADE_DATE.value, how='outer')
+            data_re.loc[:, data_re.columns != name_] = data_re.loc[:, data_re.columns != name_].fillna(method='ffill')
+            return data_re
 
-        res = data_.unstack().reindex(trade_date[KN.TRADE_DATE.value]).fillna(method='ffill').stack()
+        sql_trade_date = self.Q.trade_date_SQL(date_sta=date_sta,
+                                               date_end=date_end,
+                                               exchange=exchange)
+        trade_date = self.Q.query(sql_trade_date)
 
+        data_sub = data_.groupby([KN.STOCK_ID.value, KN.TRADE_DATE.value],
+                                 group_keys=False).apply(lambda x: x.sort_values(by=SN.REPORT_DATE.value).tail(1))
+        data_sub.reset_index(inplace=True)
+        data_trade_date = data_sub.groupby(KN.STOCK_ID.value, group_keys=False).apply(_reindex, name)
+        res = data_trade_date.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value])
+        res[name] = res[name].groupby(KN.STOCK_ID.value,
+                                      group_keys=False).apply(lambda x: x.fillna(method='ffill', limit=limit))
+
+        res.dropna(inplace=True)
+        if 'index' in res.columns:
+            res.drop(columns='index', inplace=True)
         return res
 
     def _csv_data(self, data_name: list, file_name: str = "FactorPool1", ):
@@ -50,6 +66,7 @@ class FactorBase(object):
         计算TTM
         """
         data_copy = copy.deepcopy(data_)
+        data_copy.sort_index(inplace=True)
 
         def _pros(data_sub: pd.DataFrame, name_: str):
             # print(data_sub.index[0][-1])
@@ -63,7 +80,6 @@ class FactorBase(object):
             res_ = res_.droplevel(level='stock_id').sort_index().rolling(4).sum()
             return res_
 
-        # TODO 日期改为报告期
         data_copy['month'] = data_copy[SN.REPORT_DATE.value].apply(lambda x: x[5:7])
         data_copy.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
 

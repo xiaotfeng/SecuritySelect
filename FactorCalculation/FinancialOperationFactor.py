@@ -100,6 +100,40 @@ class FinancialOperationFactor(FactorBase):
 
         return F
 
+    @classmethod  # TODO 先用营业收入代替
+    def TA_Turn_ttm(cls,
+                    data: pd.DataFrame,
+                    operator_income: str = FISN.Op_Income.value,
+                    total_asset: str = FBSN.Total_Asset.value,
+                    switch: bool = False):
+
+        """
+        总资产周转率 = 营业收入净额 / 平均资产总额
+        :return:
+        """
+        func_name = sys._getframe().f_code.co_name
+        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        data.sort_index(inplace=True)
+
+        data[func_name] = data[operator_income] / data[total_asset]
+
+        data = data.reset_index()
+
+        if switch:
+            data_fact = cls()._switch_freq(data_=data[func_name])
+        else:
+            data_fact = None
+
+        F = FactorInfo()
+        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
+        F.data = data_fact
+        F.factor_type = data['type'][0]
+        F.factor_category = cls().__class__.__name__
+        F.factor_name = func_name
+
+        return F
+
+    ####################################################################################################################
     @classmethod
     def RROC_N_data_raw(cls,
                         sta: int = 20130101,
@@ -110,6 +144,10 @@ class FinancialOperationFactor(FactorBase):
 
         sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
         financial_data = cls().Q.query(sql_)
+
+        # 过滤未上市公司
+        data_ = pd.merge(financial_data, cls().list_date, on=[KN.STOCK_ID.value], how='left')
+        financial_data = data_[data_[KN.TRADE_DATE.value] >= data_[KN.LIST_DATE.value]]
 
         return financial_data
 
@@ -125,6 +163,34 @@ class FinancialOperationFactor(FactorBase):
         sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
         financial_data = cls().Q.query(sql_)
 
+        # 过滤未上市公司
+        data_ = pd.merge(financial_data, cls().list_date, on=[KN.STOCK_ID.value], how='left')
+        financial_data = data_[data_[KN.TRADE_DATE.value] >= data_[KN.LIST_DATE.value]]
+
+        return financial_data
+
+    @classmethod
+    def TA_Turn_ttm_data_raw(cls,
+                             sta: int = 20130101,
+                             end: int = 20200401,
+                             f_type: str = '408001000'):
+        sql_keys = {"IST": {"OPER_PROFIT": f"\"{FISN.Op_Income.value}\""},
+                    "BST": {"TOT_ASSETS": f"\"{FBSN.Total_Asset.value}\""}
+                    }
+
+        sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
+        financial_data = cls().Q.query(sql_)
+
+        # 过滤未上市公司
+        data_ = pd.merge(financial_data, cls().list_date, on=[KN.STOCK_ID.value], how='left')
+        financial_data = data_[data_[KN.TRADE_DATE.value] >= data_[KN.LIST_DATE.value]]
+
+        # TTM
+        operator_income = cls()._switch_ttm(financial_data, FISN.Op_Income.value)
+        financial_data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        financial_data[FISN.Op_Income.value] = operator_income
+
+        financial_data.reset_index(inplace=True)
         return financial_data
 
     @staticmethod

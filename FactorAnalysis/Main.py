@@ -138,8 +138,8 @@ if __name__ == '__main__':
     # pool.close()
     # pool.join()
 
-    factor_dict = {"factor_name": 'PT2NA_Z',
-                   "factor_params": {}}
+    factor_dict = {"factor_name": 'TA_G',
+                   "factor_params": {"switch": True}}
     print(f"\033[1;31m{dt.datetime.now().strftime('%X')}: {factor_dict['factor_name']}\033[0m")
     db_name = 'Fin'
     cal_factor(factor_dict, db_name)
