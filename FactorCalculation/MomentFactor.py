@@ -20,7 +20,8 @@ class MomentFactor(FactorBase):
     def MTM_gen(cls,
                 data: pd.DataFrame,
                 close_price: str = PVN.CLOSE.value,
-                n: int = 1) -> FactorInfo:
+                n: int = 1,
+                **kwargs) -> FactorInfo:
         """
         N日收盘价计算的收益率
         :return:
@@ -51,7 +52,8 @@ class MomentFactor(FactorBase):
                    data: pd.DataFrame,
                    open_price: str = PVN.OPEN.value,
                    close_price: str = PVN.CLOSE.value,
-                   n: int = 1) -> FactorInfo:
+                   n: int = 1,
+                   **kwargs) -> FactorInfo:
         """
         日间收益历史滚动平均
         :return:
@@ -84,7 +86,8 @@ class MomentFactor(FactorBase):
                    data: pd.DataFrame,
                    open_price: str = PVN.OPEN.value,
                    close_price: str = PVN.CLOSE.value,
-                   n: int = 1) -> FactorInfo:
+                   n: int = 1,
+                   **kwargs) -> FactorInfo:
         """
         日内收益率历史滚动平均
         :return:
@@ -117,7 +120,8 @@ class MomentFactor(FactorBase):
     def MTM_N_P(cls,
                 data: pd.DataFrame,
                 close_name: str = PVN.CLOSE.value,
-                n: int = 1):
+                n: int = 1,
+                **kwargs):
 
         factor_name = sys._getframe().f_code.co_name + f'_{n}'
         data.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)

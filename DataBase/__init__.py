@@ -7,9 +7,9 @@ import os
 from typing import TYPE_CHECKING
 
 settings = {"driver": "mysql",
-            "database": "test",
+            "database": "StockData",
             "user": 'root',
-            "password": 'FengChen',
+            "password": 'fengchen',
             "host": "",
             "port": ''}
 

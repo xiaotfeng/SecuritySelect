@@ -4,6 +4,8 @@
 # @Email:  18817289038@163.com
 
 from datetime import datetime
+import pymysql
+import pandas as pd
 import time
 from typing import List, Type, Iterable, Dict
 from SecuritySelect.Object import GroupData, FactorData, FactorRetData
@@ -21,6 +23,11 @@ from peewee import (
 )
 
 from SecuritySelect.DataBase.database import BaseDatabaseManager, Driver
+from SecuritySelect.constant import (
+    KeyName as KN,
+    PriceVolumeName as PVN,
+    SpecialName as SN,
+)
 
 model_mapping = {"Group": GroupData}
 
@@ -40,6 +47,8 @@ def init(driver: Driver, settings: dict):
 def init_mysql(settings: dict):
     keys = {"database", "user", "password", "host", "port"}
     settings = {k: v for k, v in settings.items() if k in keys}
+    global MySQL_con
+    MySQL_con = pymysql.connect(**settings)
     db = MySQLDatabase(**settings)
     return db
 
@@ -69,6 +78,7 @@ def init_models(db: Database, driver: Driver):
         date: datetime = DateTimeField()
 
         factor_return: float = FloatField()
+        holding_period: int = IntegerField()
         factor_T: float = FloatField(null=True)
         factor_name: str = CharField()
         factor_name_chinese: str = CharField()
@@ -78,7 +88,7 @@ def init_models(db: Database, driver: Driver):
 
         class Meta:
             database = db
-            indexes = ((("date", "factor_name", "ret_type"), True),)
+            indexes = ((("date", "factor_name", "ret_type", "holding_period"), True),)
 
         @staticmethod
         def from_ret(ret: FactorRetData):
@@ -91,6 +101,7 @@ def init_models(db: Database, driver: Driver):
 
             db_bar.factor_return = ret.factor_return
             db_bar.factor_T = ret.factor_T
+            db_bar.holding_period = ret.holding_period
             db_bar.factor_name = ret.factor_name
             db_bar.factor_name_chinese = ret.factor_name_chinese
             db_bar.ret_type = ret.ret_type
@@ -124,6 +135,7 @@ def init_models(db: Database, driver: Driver):
                 else:
                     for c in chunked(dicts, 1000):
                         DBFactorRetData.insert_many(c).on_conflict_replace().execute()
+
         pass
 
     class DbFactorGroupData(ModelBase):
@@ -141,6 +153,7 @@ def init_models(db: Database, driver: Driver):
 
         stock_return: float = FloatField()
         factor_name: str = CharField()
+        holding_period: int = IntegerField()
         factor_name_chinese: str = CharField()
         factor_value: float = FloatField(null=True)
         factor_type: str = CharField()
@@ -149,7 +162,7 @@ def init_models(db: Database, driver: Driver):
 
         class Meta:
             database = db
-            indexes = ((("stock_id", "date", "factor_name"), True),)
+            indexes = ((("stock_id", "date", "factor_name", "holding_period"), True),)
 
         @staticmethod
         def from_group(group: GroupData):
@@ -165,6 +178,7 @@ def init_models(db: Database, driver: Driver):
             db_bar.group = group.group
 
             db_bar.stock_return = group.stock_return
+            db_bar.holding_period = group.holding_period
             db_bar.factor_name = group.factor_name
             db_bar.factor_value = group.factor_value
             db_bar.factor_name_chinese = group.factor_name_chinese
@@ -198,7 +212,7 @@ def init_models(db: Database, driver: Driver):
                             ),
                         ).execute()
                 else:
-                    for c in chunked(dicts, 1000):
+                    for c in chunked(dicts, 5000):
                         DbFactorGroupData.insert_many(c).on_conflict_replace().execute()
 
     class DbFactFinData(ModelBase):
@@ -278,7 +292,13 @@ def init_models(db: Database, driver: Driver):
                         DataClass.insert_many(c).on_conflict_replace().execute()
                         print(time.time() - sta)
                         i += num
-            # print("s")
+
+        def query_data(self, factor_name: str):
+            factor_sql = f"SELECT DATE_FORMAT(`date`,'%Y-%m-%d') as `date`, stock_id, factor_value as {factor_name} " \
+                         f"FROM dbfactfindata " \
+                         f"WHERE factor_name = '{factor_name}' "  # TODO 名称
+            res = pd.read_sql(factor_sql, con=MySQL_con)
+            return None if res.empty else res
 
     class DBFactMTMData(DbFactFinData):
         pass
@@ -310,6 +330,13 @@ class SqlManager(BaseDatabaseManager):
     def __init__(self, class_dict: Dict[str, Type[Model]]):
         for key_, value_ in class_dict.items():
             setattr(self, key_, value_)
+
+    def query_factor_data(
+            self,
+            factor_name: str,
+            db_name: str) -> [pd.DataFrame, None]:
+        model = getattr(self, db_name)
+        return model.query_data(model, factor_name)
 
     def save_factor_data(self, datas: Iterable[FactorData], db_name: str):
 

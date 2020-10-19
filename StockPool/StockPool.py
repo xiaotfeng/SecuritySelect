@@ -31,10 +31,9 @@ class StockPool(object):
         对ST,*ST股进行标记
         合格股票标记为True
         """
-        res = data[st]
-        # 没有标记的记为正常股
-        res.fillna(False, inplace=True)
-        self.index_list.append(res.index)
+        data_sub = data.copy(deep=True)
+        res = data_sub[st].groupby(KN.STOCK_ID.value, group_keys=False).shift(1).fillna(False)
+        self.index_list.append(res[~res].index)
         return ~ res
 
     # 成立年限
@@ -46,14 +45,14 @@ class StockPool(object):
         以真实成立时间进行筛选
         合格股票标记为True
         """
+        data_sub = data.copy(deep=True)
+        dt_now = dt.datetime.now()
+        data_sub[listdate].fillna(dt_now.date().__str__(), inplace=True)
+        list_days = data_sub[listdate].apply(lambda x: (dt_now - dt.datetime.strptime(x, "%Y-%m-%d")).days)
+        J = list_days > days
 
-        list_date = data[listdate].apply(lambda x: dt.datetime(year=int(str(x)[0:4]),
-                                                               month=int(str(x)[4:6]),
-                                                               day=int(str(x)[6:8])))
-
-        res = (dt.datetime.now() - list_date) > np.timedelta64(days)
-
-        self.index_list.append(res.index)
+        res = J.groupby(KN.STOCK_ID.value, group_keys=False).shift(1).fillna(True)
+        self.index_list.append(res[res].index)
         return res
 
     # 交易规模
@@ -64,14 +63,16 @@ class StockPool(object):
                   proportion: float = 0.05) -> pd.Series(bool):
         """
         默认标记过去5个交易日日均成交额占比在后5%的股票
-        合格股票标记为True"""
-        amount_mean = data[amount_name].groupby(KN.STOCK_ID.value).apply(
-            lambda x: x.rolling(days).mean())
-
+        合格股票标记为True
+        """
+        data_sub = data.copy(deep=True)
+        amount_mean = data_sub[amount_name].groupby(KN.STOCK_ID.value,
+                                                    group_keys=False).rolling(days).mean()
         # 空值不参与计算
-        res = amount_mean.groupby(KN.TRADE_DATE.value).apply(lambda x: x.gt(x.quantile(proportion)))
+        J = amount_mean.groupby(KN.TRADE_DATE.value).apply(lambda x: x.gt(x.quantile(proportion)))
 
-        self.index_list.append(res.index)
+        res = J.groupby(KN.STOCK_ID.value, group_keys=False).shift(1).fillna(True)
+        self.index_list.append(res[res].index)
         return res
 
     # 停牌
@@ -81,18 +82,40 @@ class StockPool(object):
                    days: int = 5,
                    frequency: int = 3) -> pd.Series(bool):
         """
+        1.当天停牌，下一天不交易
+        2.连续5天发生3天停牌不交易
         以成交额为空作为停牌标识
         如果当天下午发生停牌，该标识有误
         前days天以第days天标识为主：若第days天为5，则前days天都为5
         合格股票标记为True
         """
+        data_sub = data.copy(deep=True)
+        trade_days = data_sub[amount_name].groupby(KN.STOCK_ID.value,
+                                                   group_keys=False).rolling(days, min_periods=days).count().bfill()
+        J1 = trade_days > days - frequency
+        J2 = data_sub[amount_name] != 0
+        res = pd.DataFrame({"J1": J1, "J2": J2})
+        res = res.groupby(KN.STOCK_ID.value, group_keys=False).shift(1).fillna(True)
 
-        trade_days = data[amount_name].groupby(KN.STOCK_ID.value).apply(
-            lambda x: x.rolling(days, min_periods=days).count().fillna(method='bfill'))
+        self.index_list.append(res[res['J1'] & res['J2']].index)
+        return res
 
-        res = trade_days > days - frequency
+    def price_limit(self,
+                    data: pd.DataFrame,
+                    up_down: PVN.Up_Down.value):
+        """
+        当天涨跌停，下一天停止交易
+        若标识为空，则默认为涨跌停股票（该类股票一般为退市股或ST股等异常股）
+        合格股票标记为True
+        :param up_down:
+        :param data:
+        :return:
+        """
+        data_sub = data.copy(deep=True)
 
-        self.index_list.append(res.index)
+        J = data_sub[up_down].fillna(1) == 0
+        res = J.groupby(KN.STOCK_ID.value, group_keys=False).shift(1).fillna(True)
+        self.index_list.append(res[res].index)
         return res
 
     def StockPool1(self) -> pd.Index:
@@ -120,6 +143,9 @@ class StockPool(object):
             # get filter condition
             print(f"{dt.datetime.now().strftime('%X')}: Weed out ST stock")
             self.ST(data_input)
+
+            print(f"{dt.datetime.now().strftime('%X')}: Weed out Price Up_Down limit stock")
+            self.price_limit(data_input, PVN.Up_Down.value)
 
             print(f"{dt.datetime.now().strftime('%X')}: Weed out stock established in less than 3 months")
             self.established(data=data_input, days=90)

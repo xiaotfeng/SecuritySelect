@@ -8,9 +8,13 @@ import matplotlib.pyplot as plt
 from pyfinance.ols import PandasRollingOLS
 import warnings
 import time
+
+from SecuritySelect.FactorCalculation.FactorBase import FactorBase
+from SecuritySelect.Object import FactorInfo
 from SecuritySelect.constant import (
     KeyName as KN,
-    PriceVolumeName as PVN
+    PriceVolumeName as PVN,
+    SpecialName as SN
 )
 
 warnings.filterwarnings(action='ignore')
@@ -39,9 +43,10 @@ class GeneticFactor(object):
         :return:
         """
 
-        # 设置双重索引并且排序
+        func_name = sys._getframe().f_code.co_name
         data.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
+
         # 最高价对前收盘价收益率
         cal_sub1 = data[[close_name, high_name]].groupby(KN.STOCK_ID.value,
                                                          group_keys=False). \

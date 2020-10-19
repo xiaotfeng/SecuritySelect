@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import os
+import statsmodels.api as sm
 import copy
 import time
 import datetime as dt
@@ -36,7 +37,7 @@ class FactorProcess(object):
         self.fact_name = data.name
 
         method_dict = {
-            "before_after_3%": self.before_after_3,
+            "before_after_3%": self.before_after_n,
             "before_after_3sigma": self.before_after_3sigma,
             "mad": self.mad
         }
@@ -58,17 +59,19 @@ class FactorProcess(object):
 
         self.fact_name = data.name
 
-        # regression  # TODO 哑变量
+        # regression
         def _reg(data_: pd.DataFrame) -> pd.Series:
-            data_sub_ = data_.dropna(how='any')
+            """！！！不排序回归结果会不一样！！！"""
+            data_sub_ = data_.dropna(how='any').sort_index()
 
             if data_sub_.shape[0] < data_sub_.shape[1]:
                 fact_neu = pd.Series(data=np.nan, index=data_.index)
             else:
-                X, Y = data_sub_.loc[:, data_sub_.columns != self.fact_name], data_sub_[self.fact_name]
+                X = pd.get_dummies(data_sub_.loc[:, data_sub_.columns != self.fact_name],
+                                   columns=[SN.INDUSTRY_FLAG.value])
+                Y = data_sub_[self.fact_name]
                 reg = np.linalg.lstsq(X, Y)
-                residues = Y - (reg[0] * X).sum(axis=1)
-                fact_neu = pd.Series(data=residues, index=data_sub_.index)
+                fact_neu = Y - (reg[0] * X).sum(axis=1)
             fact_neu.name = self.fact_name
             return fact_neu
 
@@ -80,7 +83,7 @@ class FactorProcess(object):
                                       usecols=['date', 'stock_id', 'liq_mv'])
                 self.raw_data['mv'] = mv_data
             else:
-                mv_data = copy.deepcopy(self.raw_data['mv'])
+                mv_data = self.raw_data['mv'].copy(deep=True)
 
         else:
             mv_data = pd.DataFrame()
@@ -91,15 +94,16 @@ class FactorProcess(object):
                                             index_col=['date', 'stock_id'])
                 self.raw_data['industry'] = industry_data
             else:
-                industry_data = copy.deepcopy(self.raw_data['industry'])
+                industry_data = self.raw_data['industry'].copy(deep=True)
         else:
             industry_data = pd.DataFrame()
 
         # merge data
-        neu_factor = pd.concat([data, mv_data, industry_data], axis=1)
+        neu_factor = pd.concat([data, mv_data, industry_data], axis=1, join='inner')
 
         # neutralization
-        res = neu_factor.groupby(KN.TRADE_DATE.value, group_keys=False).apply(lambda x: _reg(x))
+
+        res = neu_factor.groupby(KN.TRADE_DATE.value, group_keys=False).apply(_reg)
         return res
 
     # *标准化*
@@ -128,8 +132,7 @@ class FactorProcess(object):
         else:
             stand_data = data
 
-        res = stand_data.groupby(KN.TRADE_DATE.value,
-                                 group_keys=False).apply(lambda x: method_dict[method](x))
+        res = stand_data.groupby(KN.TRADE_DATE.value, group_keys=False).apply(method_dict[method])
         return res
 
     # # *正交化*
@@ -186,48 +189,6 @@ class FactorProcess(object):
     #
     #     return method_dict[method]
     #
-    # # *因子加权*
-    # def factor_weight(self, factor_df, freq=12, method='equal'):
-    #     """
-    #     返回权重化处理后的因子
-    #     :param method:
-    #     :param factor_df:
-    #     :param freq:
-    #     :return:
-    #     """
-    #
-    #     # 等权加权
-    #     def equal_weight():
-    #         weight = 1 / len(factor_df.columns)
-    #         factor_weighted = factor_df.sub(weight, axis=0)
-    #         return factor_weighted
-    #
-    #     # IC均值加权(单因子时间序列df)
-    #     def ic_weight():
-    #         ic_mean = self._ic(self.security_code).rolling().mean(freq)
-    #         weight = 1 / ic_mean[factor_df.index]
-    #         factor_weighted = factor_df.sub(weight, axis=0)
-    #         return factor_weighted
-    #
-    #     # IC_IR加权
-    #     def ic_ir_weight():
-    #         ic_mean = self._ic(self.security_code).rolling().mean(freq)
-    #         ic_std = self._ic(self.security_code).rolling().std(freq)
-    #         ic_ir = ic_mean / ic_std
-    #         weight = 1 / ic_ir
-    #         factor_weighted = factor_df.sub(weight, axis=0)
-    #         return factor_weighted
-    #
-    #     # 最优化复合IR加权
-    #
-    #     # 半衰IC加权
-    #
-    #     method_dict = {
-    #         "equal": equal_weight(),
-    #         "ic": ic_weight(),
-    #         "ic_ir": ic_ir_weight()
-    #     }
-    #     return method_dict[method]
 
     # 因子预处理
     def main(self,
@@ -255,11 +216,11 @@ class FactorProcess(object):
 
     # 前后3%
     @staticmethod
-    def before_after_3(data: pd.Series):
+    def before_after_n(data: pd.Series, n: int = 3):
         length = len(data)
         sort_values = data.sort_values()
-        threshold_top = sort_values.iloc[int(length * 0.03)]
-        threshold_down = sort_values.iloc[-(int(length * 0.03) + 1)]
+        threshold_top = sort_values.iloc[int(length * n / 100)]
+        threshold_down = sort_values.iloc[-(int(length * n / 100) + 1)]
         data[data <= threshold_top] = threshold_top
         data[data >= threshold_down] = threshold_down
         return data
@@ -280,10 +241,10 @@ class FactorProcess(object):
     def mad(data):
         median = data.median()
         MAD = (data - median).abs().median()
-        threshold_up = median - 3 * 1.483 * MAD
-        threshold_down = median + 3 * 1.483 * MAD
-        data[data <= threshold_up] = threshold_up
-        data[data >= threshold_down] = threshold_down
+        threshold_up = median + 3 * 1.483 * MAD
+        threshold_down = median - 3 * 1.483 * MAD
+        data[data >= threshold_up] = threshold_up
+        data[data <= threshold_down] = threshold_down
         return data
 
     """标准化"""

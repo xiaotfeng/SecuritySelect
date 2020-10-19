@@ -44,7 +44,7 @@ class FinancialQualityFactor(FactorBase):  # TODO 修改
         data = data.reset_index()
 
         if switch:
-            data_fact = cls()._switch_freq(data_=data[func_name])
+            data_fact = cls()._switch_freq(data_=data, name=func_name)
         else:
             data_fact = None
 
@@ -74,7 +74,7 @@ class FinancialQualityFactor(FactorBase):  # TODO 修改
         data = data.reset_index()
 
         if switch:
-            data_fact = cls()._switch_freq(data_=data[func_name])
+            data_fact = cls()._switch_freq(data_=data, name=func_name)
         else:
             data_fact = None
 
@@ -111,7 +111,7 @@ class FinancialQualityFactor(FactorBase):  # TODO 修改
         data = data.reset_index()
 
         if switch:
-            data_fact = cls()._switch_freq(data_=data[func_name])
+            data_fact = cls()._switch_freq(data_=data, name=func_name)
         else:
             data_fact = None
 
@@ -140,7 +140,7 @@ class FinancialQualityFactor(FactorBase):  # TODO 修改
         data = data.reset_index()
 
         if switch:
-            data_fact = cls()._switch_freq(data_=data[func_name])
+            data_fact = cls()._switch_freq(data_=data, name=func_name)
         else:
             data_fact = None
 

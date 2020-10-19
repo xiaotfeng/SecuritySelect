@@ -46,19 +46,17 @@ class FinancialSolvencyFactor(FactorBase):
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
-        # 部分会计科目若缺失填充零
-        data[[short_borrow, short_bond_payable, long_borrow]] = \
-            data[[short_borrow, short_bond_payable, long_borrow]].fillna(0)
-
-        data[func_name] = (data[short_borrow] + data[short_bond_payable] + data[long_borrow]) / data[total_asset]
+        data[func_name] = data[[short_borrow, short_bond_payable, long_borrow]].sum(skipna=True,
+                                                                                    axis=1) / data[total_asset]
 
         data[func_name][np.isinf(data[func_name])] = np.nan
-        data = data.reset_index()
 
         if switch:
-            data_fact = cls()._switch_freq(data_=data[func_name])
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
         else:
             data_fact = None
+
+        data = data.reset_index()
 
         F = FactorInfo()
         F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
@@ -100,21 +98,21 @@ class FinancialSolvencyFactor(FactorBase):
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
-        # 部分会计科目若缺失填充零
-        data = data.fillna(0)
-
         # 短期偿债能力指标
-        data[func_name] = (data[currency] + data[tradable_asset] + data[op_net_cash_flow]) / \
-                          (data[short_borrow] + data[short_bond_payable] + data[short_iliq_liability_1y])
+        data[func_name] = data[[currency, tradable_asset, op_net_cash_flow]].sum(skipna=True,
+                                                                                 axis=1) / \
+                          data[[short_borrow, short_bond_payable, short_iliq_liability_1y]].sum(skipna=True,
+                                                                                                axis=1)
 
         # switch inf to Nan
         data[func_name][np.isinf(data[func_name])] = np.nan
-        data = data.reset_index()
 
         if switch:
-            data_fact = cls()._switch_freq(data_=data[func_name])
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
         else:
             data_fact = None
+
+        data = data.reset_index()
 
         F = FactorInfo()
         F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
@@ -156,24 +154,23 @@ class FinancialSolvencyFactor(FactorBase):
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
-        # 部分会计科目若缺失填充零
-        data = data.fillna(0)
-
         # 短期偿债能力指标
-        ShortDebt1_CFPA = (data[currency] + data[tradable_asset] + data[op_net_cash_flow]) / \
-                          (data[short_borrow] + data[short_bond_payable] + data[short_iliq_liability_1y])
+        ShortDebt1_CFPA = data[[currency, tradable_asset, op_net_cash_flow]].sum(skipna=True,
+                                                                                 axis=1) / \
+                          data[[short_borrow, short_bond_payable, short_iliq_liability_1y]].sum(skipna=True,
+                                                                                                axis=1)
 
         # switch inf to Nan
         ShortDebt1_CFPA[np.isinf(ShortDebt1_CFPA)] = np.nan
 
-        data[func_name] = ShortDebt1_CFPA.groupby(KN.STOCK_ID.value).apply(
-            lambda x: (x - x.shift(1) / abs(x.shift(1))))
-        data = data.reset_index()
+        data[func_name] = ShortDebt1_CFPA.groupby(KN.STOCK_ID.value).apply(lambda x: x.diff(1) / abs(x.shift(1)))
 
         if switch:
-            data_fact = cls()._switch_freq(data_=data[func_name])
+            data_fact = cls()._switch_freq(data_=data, name=func_name)
         else:
             data_fact = None
+
+        data = data.reset_index()
 
         F = FactorInfo()
         F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
@@ -215,25 +212,22 @@ class FinancialSolvencyFactor(FactorBase):
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
-        # 部分会计科目若缺失填充零
-        data = data.fillna(0)
-
         # 短期偿债能力指标
-        ShortDebt1_CFPA = (data[currency] + data[tradable_asset] + data[op_net_cash_flow]) / \
-                          (data[short_borrow] + data[short_bond_payable] + data[short_iliq_liability_1y])
-
-        data[func_name] = ShortDebt1_CFPA.groupby(KN.STOCK_ID.value).apply(
-            lambda x: - abs((x - x.shift(1)) / abs(x.shift(1))))
+        ShortDebt1_CFPA = data[[currency, tradable_asset, op_net_cash_flow]].sum(skipna=True,
+                                                                                 axis=1) / \
+                          data[[short_borrow, short_bond_payable, short_iliq_liability_1y]].sum(skipna=True,
+                                                                                                axis=1)
+        data[func_name] = ShortDebt1_CFPA.groupby(KN.STOCK_ID.value).apply(lambda x: - abs(x.diff(1) / abs(x.shift(1))))
 
         # switch inf to Nan
         data[func_name][np.isinf(data[func_name])] = np.nan
 
-        data = data.reset_index()
-
         if switch:
-            data_fact = cls()._switch_freq(data_=data[func_name])
+            data_fact = cls()._switch_freq(data_=data, name=func_name)
         else:
             data_fact = None
+
+        data = data.reset_index()
 
         F = FactorInfo()
         F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
@@ -277,23 +271,22 @@ class FinancialSolvencyFactor(FactorBase):
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
-        # 部分会计科目若缺失填充零
-        data = data.fillna(0)
-
         # 短期偿债能力指标
-        ShortDebt1_CFPA = (data[currency] + data[tradable_asset] + data[op_net_cash_flow]) / \
-                          (data[short_borrow] + data[short_bond_payable] + data[short_iliq_liability_1y])
+        ShortDebt1_CFPA = data[[currency, tradable_asset, op_net_cash_flow]].sum(skipna=True,
+                                                                                 axis=1) / \
+                          data[[short_borrow, short_bond_payable, short_iliq_liability_1y]].sum(skipna=True,
+                                                                                                axis=1)
 
         # switch inf to Nan
         ShortDebt1_CFPA[np.isinf(ShortDebt1_CFPA)] = np.nan
-
         data[func_name] = ShortDebt1_CFPA.groupby(KN.STOCK_ID.value).apply(lambda x: - x.rolling(quarter).std())
-        data = data.reset_index()
 
         if switch:
-            data_fact = cls()._switch_freq(data_=data[func_name])
+            data_fact = cls()._switch_freq(data_=data, name=func_name)
         else:
             data_fact = None
+
+        data = data.reset_index()
 
         F = FactorInfo()
         F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
@@ -336,11 +329,8 @@ class FinancialSolvencyFactor(FactorBase):
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
-        # 部分会计科目若缺失填充零
-        data.loc[:, data.columns != total_asset] = data.loc[:, data.columns != total_asset].fillna(0)
-
-        x1 = data[currency] + data[tradable_asset] + data[op_net_cash_flow]
-        x2 = data[short_borrow] + data[short_bond_payable] + data[short_iliq_liability_1y]
+        x1 = data[[currency, tradable_asset, op_net_cash_flow]].sum(skipna=True, axis=1)
+        x2 = data[[short_borrow, short_bond_payable, short_iliq_liability_1y]].sum(skipna=True, axis=1)
         y = data[total_asset]
 
         # 短期偿债能力指标
@@ -348,12 +338,13 @@ class FinancialSolvencyFactor(FactorBase):
 
         # switch inf to Nan
         data[func_name][np.isinf(data[func_name])] = np.nan
-        data = data.reset_index()
 
         if switch:
-            data_fact = cls()._switch_freq(data_=data[func_name])
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
         else:
             data_fact = None
+
+        data = data.reset_index()
 
         F = FactorInfo()
         F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
@@ -396,11 +387,8 @@ class FinancialSolvencyFactor(FactorBase):
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
-        # 部分会计科目若缺失填充零
-        data.loc[:, data.columns != total_asset] = data.loc[:, data.columns != total_asset].fillna(0)
-
-        x1 = data[currency] + data[tradable_asset] + data[op_net_cash_flow]
-        x2 = data[short_borrow] + data[short_bond_payable] + data[short_iliq_liability_1y]
+        x1 = data[[currency, tradable_asset, op_net_cash_flow]].sum(skipna=True, axis=1)
+        x2 = data[[short_borrow, short_bond_payable, short_iliq_liability_1y]].sum(skipna=True, axis=1)
         y = data[total_asset]
 
         # 短期偿债能力指标
@@ -408,14 +396,14 @@ class FinancialSolvencyFactor(FactorBase):
 
         # switch inf to Nan
         ShortDebt2_CFPA[np.isinf(ShortDebt2_CFPA)] = np.nan
-
-        data[func_name] = ShortDebt2_CFPA.groupby(KN.STOCK_ID.value).apply(lambda x: (x - x.shift(1) / abs(x.shift(1))))
-        data = data.reset_index()
+        data[func_name] = ShortDebt2_CFPA.groupby(KN.STOCK_ID.value).apply(lambda x: x.diff(1) / abs(x.shift(1)))
 
         if switch:
-            data_fact = cls()._switch_freq(data_=data[func_name])
+            data_fact = cls()._switch_freq(data_=data, name=func_name)
         else:
             data_fact = None
+
+        data = data.reset_index()
 
         F = FactorInfo()
         F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
@@ -458,28 +446,24 @@ class FinancialSolvencyFactor(FactorBase):
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
-        # 部分会计科目若缺失填充零
-        data.loc[:, data.columns != total_asset] = data.loc[:, data.columns != total_asset].fillna(0)
-
-        x1 = data[currency] + data[tradable_asset] + data[op_net_cash_flow]
-        x2 = data[short_borrow] + data[short_bond_payable] + data[short_iliq_liability_1y]
+        x1 = data[[currency, tradable_asset, op_net_cash_flow]].sum(skipna=True, axis=1)
+        x2 = data[[short_borrow, short_bond_payable, short_iliq_liability_1y]].sum(skipna=True, axis=1)
         y = data[total_asset]
 
         # 短期偿债能力指标
         ShortDebt2_CFPA = (x1 - x2) / y
 
-        data[func_name] = ShortDebt2_CFPA.groupby(KN.STOCK_ID.value).apply(
-            lambda x: - abs((x - x.shift(1) / abs(x.shift(1)))))
+        data[func_name] = ShortDebt2_CFPA.groupby(KN.STOCK_ID.value).apply(lambda x: - abs(x.diff(1) / abs(x.shift(1))))
 
         # switch inf to Nan
         data[func_name][np.isinf(data[func_name])] = np.nan
 
-        data = data.reset_index()
-
         if switch:
-            data_fact = cls()._switch_freq(data_=data[func_name])
+            data_fact = cls()._switch_freq(data_=data, name=func_name)
         else:
             data_fact = None
+
+        data = data.reset_index()
 
         F = FactorInfo()
         F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
@@ -524,26 +508,22 @@ class FinancialSolvencyFactor(FactorBase):
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
-        # 部分会计科目若缺失填充零
-        data.loc[:, data.columns != total_asset] = data.loc[:, data.columns != total_asset].fillna(0)
-
-        x1 = data[currency] + data[tradable_asset] + data[op_net_cash_flow]
-        x2 = data[short_borrow] + data[short_bond_payable] + data[short_iliq_liability_1y]
+        x1 = data[[currency, tradable_asset, op_net_cash_flow]].sum(skipna=True, axis=1)
+        x2 = data[[short_borrow, short_bond_payable, short_iliq_liability_1y]].sum(skipna=True, axis=1)
         y = data[total_asset]
 
         # 短期偿债能力指标
         ShortDebt2_CFPA = (x1 - x2) / y
-
-        data[func_name] = ShortDebt2_CFPA.groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(quarter).std())
-
+        data[func_name] = ShortDebt2_CFPA.groupby(KN.STOCK_ID.value).apply(lambda x: - x.rolling(quarter).std())
         # switch inf to Nan
         data[func_name][np.isinf(data[func_name])] = np.nan
-        data = data.reset_index()
 
         if switch:
-            data_fact = cls()._switch_freq(data_=data[func_name])
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
         else:
             data_fact = None
+
+        data = data.reset_index()
 
         F = FactorInfo()
         F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
@@ -583,24 +563,21 @@ class FinancialSolvencyFactor(FactorBase):
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
-        # 部分会计科目若缺失填充零
-        data.loc[:, data.columns != total_asset] = data.loc[:, data.columns != total_asset].fillna(0)
-
-        x1 = data[currency] + data[tradable_asset]
-        x2 = data[short_borrow] + data[short_bond_payable] + data[short_iliq_liability_1y]
+        x1 = data[[currency, tradable_asset]].sum(skipna=True, axis=1)
+        x2 = data[[short_borrow, short_bond_payable, short_iliq_liability_1y]].sum(skipna=True, axis=1)
         y = data[total_asset]
 
         # 短期偿债能力指标
         data[func_name] = (x1 - x2) / y
-
         # switch inf to Nan
         data[func_name][np.isinf(data[func_name])] = np.nan
-        data = data.reset_index()
 
         if switch:
-            data_fact = cls()._switch_freq(data_=data[func_name])
+            data_fact = cls()._switch_freq(data_=data, name=func_name)
         else:
             data_fact = None
+
+        data = data.reset_index()
 
         F = FactorInfo()
         F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
@@ -640,25 +617,23 @@ class FinancialSolvencyFactor(FactorBase):
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
-        # 部分会计科目若缺失填充零
-        data.loc[:, data.columns != total_asset] = data.loc[:, data.columns != total_asset].fillna(0)
-
-        x1 = data[currency] + data[tradable_asset]
-        x2 = data[short_borrow] + data[short_bond_payable] + data[short_iliq_liability_1y]
+        x1 = data[[currency, tradable_asset]].sum(skipna=True, axis=1)
+        x2 = data[[short_borrow, short_bond_payable, short_iliq_liability_1y]].sum(skipna=True, axis=1)
         y = data[total_asset]
 
         # 短期偿债能力指标
         ShortDebt2_CFPA = (x1 - x2) / y
 
-        data[func_name] = ShortDebt2_CFPA.groupby(KN.STOCK_ID.value).apply(lambda x: (x - x.shift(1) / abs(x.shift(1))))
+        data[func_name] = ShortDebt2_CFPA.groupby(KN.STOCK_ID.value).apply(lambda x: x.diff(1) / abs(x.shift(1)))
         # switch inf to Nan
         data[func_name][np.isinf(data[func_name])] = np.nan
-        data = data.reset_index()
 
         if switch:
-            data_fact = cls()._switch_freq(data_=data[func_name])
+            data_fact = cls()._switch_freq(data_=data, name=func_name)
         else:
             data_fact = None
+
+        data = data.reset_index()
 
         F = FactorInfo()
         F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
@@ -698,11 +673,8 @@ class FinancialSolvencyFactor(FactorBase):
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
-        # 部分会计科目若缺失填充零
-        data.loc[:, data.columns != total_asset] = data.loc[:, data.columns != total_asset].fillna(0)
-
-        x1 = data[currency] + data[tradable_asset]
-        x2 = data[short_borrow] + data[short_bond_payable] + data[short_iliq_liability_1y]
+        x1 = data[[currency, tradable_asset]].sum(skipna=True, axis=1)
+        x2 = data[[short_borrow, short_bond_payable, short_iliq_liability_1y]].sum(skipna=True, axis=1)
         y = data[total_asset]
 
         # 短期偿债能力指标
@@ -711,15 +683,14 @@ class FinancialSolvencyFactor(FactorBase):
         # switch inf to Nan
         ShortDebt2_CFPA[np.isinf(ShortDebt2_CFPA)] = np.nan
 
-        data[func_name] = ShortDebt2_CFPA.groupby(KN.STOCK_ID.value).apply(
-            lambda x: - abs((x - x.shift(1) / abs(x.shift(1)))))
-
-        data = data.reset_index()
+        data[func_name] = ShortDebt2_CFPA.groupby(KN.STOCK_ID.value).apply(lambda x: - abs(x.diff(1) / abs(x.shift(1))))
 
         if switch:
-            data_fact = cls()._switch_freq(data_=data[func_name])
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
         else:
             data_fact = None
+
+        data = data.reset_index()
 
         F = FactorInfo()
         F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
@@ -761,27 +732,22 @@ class FinancialSolvencyFactor(FactorBase):
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
-        # 部分会计科目若缺失填充零
-        data.loc[:, data.columns != total_asset] = data.loc[:, data.columns != total_asset].fillna(0)
-
-        x1 = data[currency] + data[tradable_asset]
-        x2 = data[short_borrow] + data[short_bond_payable] + data[short_iliq_liability_1y]
+        x1 = data[[currency, tradable_asset]].sum(skipna=True, axis=1)
+        x2 = data[[short_borrow, short_bond_payable, short_iliq_liability_1y]].sum(skipna=True, axis=1)
         y = data[total_asset]
 
         # 短期偿债能力指标
         ShortDebt2_CFPA = (x1 - x2) / y
-
         # switch inf to Nan
         ShortDebt2_CFPA[np.isinf(ShortDebt2_CFPA)] = np.nan
-
         data[func_name] = ShortDebt2_CFPA.groupby(KN.STOCK_ID.value).apply(lambda x: - x.rolling(quarter).std())
 
-        data = data.reset_index()
-
         if switch:
-            data_fact = cls()._switch_freq(data_=data[func_name])
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
         else:
             data_fact = None
+
+        data = data.reset_index()
 
         F = FactorInfo()
         F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
@@ -803,9 +769,6 @@ class FinancialSolvencyFactor(FactorBase):
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
-        # 部分会计科目若缺失填充零
-        data.loc[:, data.columns != net_asset_in] = data.loc[:, data.columns != net_asset_in].fillna(0)
-
         data["PT2NA"] = data[tax_payable] / data[net_asset_in]
         data["PT2NA_mean"] = data["PT2NA"].groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(quarter).mean())
         data["PT2NA_std"] = data["PT2NA"].groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(quarter).std())
@@ -813,12 +776,13 @@ class FinancialSolvencyFactor(FactorBase):
 
         # switch inf to nan
         data[func_name][np.isinf(data[func_name])] = np.nan
-        data = data.reset_index()
 
         if switch:
-            data_fact = cls()._switch_freq(data_=data[func_name])
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
         else:
             data_fact = None
+
+        data = data.reset_index()
 
         F = FactorInfo()
         F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
@@ -843,7 +807,7 @@ class FinancialSolvencyFactor(FactorBase):
         # 部分会计科目若缺失填充零
         data.fillna(0, inplace=True)
 
-        IT_qoq = data[tax].groupby(KN.STOCK_ID.value).apply(lambda x: (x - x.shift(1)) / abs(x.shift(1)))
+        IT_qoq = data[tax].groupby(KN.STOCK_ID.value).apply(lambda x: x.diff(1) / abs(x.shift(1)))
 
         IT_qoq_mean = IT_qoq.groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(quarter).mean())
         IT_qoq_std = IT_qoq.groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(quarter).std())
@@ -853,12 +817,12 @@ class FinancialSolvencyFactor(FactorBase):
         # switch inf to nan
         data[func_name][np.isinf(data[func_name])] = np.nan
 
-        data = data.reset_index()
-
         if switch:
-            data_fact = cls()._switch_freq(data_=data[func_name])
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
         else:
             data_fact = None
+
+        data = data.reset_index()
 
         F = FactorInfo()
         F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
@@ -883,7 +847,7 @@ class FinancialSolvencyFactor(FactorBase):
         # 部分会计科目若缺失填充零
         data.fillna(0, inplace=True)
 
-        PTCF_qoq = data[all_tax].groupby(KN.STOCK_ID.value).apply(lambda x: (x - x.shift(1)) / abs(x.shift(1)))
+        PTCF_qoq = data[all_tax].groupby(KN.STOCK_ID.value).apply(lambda x: x.diff(1) / abs(x.shift(1)))
 
         PTCF_qoq_mean = PTCF_qoq.groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(quarter).mean())
         PTCF_qoq_std = PTCF_qoq.groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(quarter).std())
@@ -893,12 +857,12 @@ class FinancialSolvencyFactor(FactorBase):
         # switch inf to nan
         data[func_name][np.isinf(data[func_name])] = np.nan
 
-        data = data.reset_index()
-
         if switch:
-            data_fact = cls()._switch_freq(data_=data[func_name])
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
         else:
             data_fact = None
+
+        data = data.reset_index()
 
         F = FactorInfo()
         F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
@@ -923,22 +887,20 @@ class FinancialSolvencyFactor(FactorBase):
         # 部分会计科目若缺失填充零
         data.fillna(0, inplace=True)
 
-        OT_qoq = data[tax_surcharges].groupby(KN.STOCK_ID.value).apply(lambda x: (x - x.shift(1)) / abs(x.shift(1)))
-
+        OT_qoq = data[tax_surcharges].groupby(KN.STOCK_ID.value).apply(lambda x: x.diff(1) / abs(x.shift(1)))
         OT_qoq_mean = OT_qoq.groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(quarter).mean())
         OT_qoq_std = OT_qoq.groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(quarter).std())
-
         data[func_name] = (OT_qoq - OT_qoq_mean) / OT_qoq_std
 
         # switch inf to nan
         data[func_name][np.isinf(data[func_name])] = np.nan
 
-        data = data.reset_index()
-
         if switch:
-            data_fact = cls()._switch_freq(data_=data[func_name])
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
         else:
             data_fact = None
+
+        data = data.reset_index()
 
         F = FactorInfo()
         F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
@@ -961,13 +923,8 @@ class FinancialSolvencyFactor(FactorBase):
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
-        # 部分会计科目若缺失填充零
-        data[tax_surcharges] = data[tax_surcharges].fillna(0)
-
         OT2NP = data[tax_surcharges] / data[net_pro_in]
-
-        OT2NP_qoq = OT2NP.groupby(KN.STOCK_ID.value).apply(lambda x: (x - x.shift(1)) / abs(x.shift(1)))
-
+        OT2NP_qoq = OT2NP.groupby(KN.STOCK_ID.value).apply(lambda x: x.diff(1) / abs(x.shift(1)))
         OT2NP_qoq_mean = OT2NP_qoq.groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(quarter).mean())
         OT2NP_qoq_std = OT2NP_qoq.groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(quarter).std())
 
@@ -979,7 +936,7 @@ class FinancialSolvencyFactor(FactorBase):
         data = data.reset_index()
 
         if switch:
-            data_fact = cls()._switch_freq(data_=data[func_name])
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
         else:
             data_fact = None
 

@@ -19,7 +19,7 @@ class FilePathName(Enum):
 
     factor_pool_path = 'A:\\数据\\FactorPool\\'  # 因子池
     factor_inputData = 'A:\\数据\\FactorPool\\Factor_InputData\\'  # 因子计算所需数据
-    factor_result = "A:\\数据\\FactorPool\\FactorResult\\"  #
+    factor_raw_data = "A:\\数据\\FactorPool\\Factor_Raw_Data\\"  #
     factor_ef = "A:\\数据\\FactorPool\\Factors_Effectiveness\\"  # 因子检验结果保存
 
 
@@ -49,6 +49,8 @@ class PriceVolumeName(Enum):
     OPEN = 'open'
     HIGH = 'high'
     LOW = 'low'
+
+    Up_Down = 'up_down_limit'
 
     AMOUNT = 'amount'
     VOLUME = 'volume'
@@ -96,6 +98,7 @@ class FinancialBalanceSheetName(Enum):
 class FinancialIncomeSheetName(Enum):
     Net_Pro_In = 'net_profit_in'  # 净利润（包含少数股东权益）
     Net_Pro_Ex = 'net_profit_ex'  # 净利润（不包含少数股东权益）
+    Net_Pro_Cut = 'net_profit_cut'  # 净利润（扣除非经常性损益）
 
     Total_Op_Income = 'total_op_ic'  # 营业总收入
     Op_Total_Cost = 'op_total_cost'  # 营业总成本
@@ -110,6 +113,8 @@ class FinancialIncomeSheetName(Enum):
 
 @unique
 class FinancialCashFlowSheetName(Enum):
+
+    Net_CF = 'net_cash_flow'  # 净现金流
     Op_Net_CF = 'op_net_cash_flow'  # 经营性活动产生的现金流量净额
     All_Tax = 'tax_all'  # 支付的各项税费
 

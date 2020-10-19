@@ -21,6 +21,14 @@ class Driver(Enum):
 class BaseDatabaseManager(ABC):
 
     @abstractmethod
+    def query_factor_data(
+            self,
+            factor_name: str,
+            db_name: str):
+        pass
+
+
+    @abstractmethod
     def save_group_data(
             self,
             datas: Iterable["GroupData"]

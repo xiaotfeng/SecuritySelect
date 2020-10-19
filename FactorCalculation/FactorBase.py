@@ -26,16 +26,29 @@ class FactorBase(object):
         self.list_date = SQL().query(SQL().list_date_SQL())
 
     # 财务数据转换，需要考虑未来数据
-    def _switch_freq(self,  # TODO 用因子值索引进行检索
+    def _switch_freq(self,
                      data_: pd.DataFrame,
                      name: str,
-                     limit: int = 60,
+                     limit: int = 120,
                      date_sta: str = '20130101',
                      date_end: str = '20200401',
                      exchange: str = EN.SSE.value) -> pd.Series:
+        """
+
+        :param data_:
+        :param name: 需要转换的财务指标
+        :param limit: 最大填充时期，默认二个季度
+        :param date_sta:
+        :param date_end:
+        :param exchange:
+        :return:
+        """
         def _reindex(data: pd.DataFrame, name_: str):
+            """填充有风险哦"""
+            # data_re = data.reindex(trade_date[KN.TRADE_DATE.value])
             data_re = pd.merge(data, trade_date, on=KN.TRADE_DATE.value, how='outer')
             data_re.loc[:, data_re.columns != name_] = data_re.loc[:, data_re.columns != name_].fillna(method='ffill')
+
             return data_re
 
         sql_trade_date = self.Q.trade_date_SQL(date_sta=date_sta,
@@ -43,13 +56,22 @@ class FactorBase(object):
                                                exchange=exchange)
         trade_date = self.Q.query(sql_trade_date)
 
-        data_sub = data_.groupby([KN.STOCK_ID.value, KN.TRADE_DATE.value],
-                                 group_keys=False).apply(lambda x: x.sort_values(by=SN.REPORT_DATE.value).tail(1))
-        data_sub.reset_index(inplace=True)
+        # 保留最新数据
+        data_sub = data_.groupby(KN.STOCK_ID.value,
+                                 group_keys=False).apply(
+            lambda x: x.sort_values(
+                by=[KN.TRADE_DATE.value, SN.REPORT_DATE.value]).drop_duplicates(subset=[KN.TRADE_DATE.value],
+                                                                                keep='last'))
+        data_sub = data_sub.reset_index()
+
+        # 交易日填充
         data_trade_date = data_sub.groupby(KN.STOCK_ID.value, group_keys=False).apply(_reindex, name)
         res = data_trade_date.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value])
+
+        # 历史数据有限填充因子值
         res[name] = res[name].groupby(KN.STOCK_ID.value,
-                                      group_keys=False).apply(lambda x: x.fillna(method='ffill', limit=limit))
+                                      group_keys=False).apply(lambda x: x.sort_index().fillna(method='ffill',
+                                                                                              limit=limit))
 
         res.dropna(inplace=True)
         if 'index' in res.columns:

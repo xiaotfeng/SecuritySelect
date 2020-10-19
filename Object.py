@@ -6,7 +6,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 import pandas as pd
-from typing import Union
+import yagmail
 
 
 @dataclass
@@ -22,6 +22,7 @@ class GroupData(object):
     group: int = None
 
     stock_return: float = None
+    holding_period: int = None
     factor_name: str = None
     factor_name_chinese: str = None
     factor_value: float = None
@@ -38,6 +39,7 @@ class FactorRetData(object):
     datetime_update: datetime = None
 
     factor_return: float = None
+    holding_period: int = None
     factor_T: float = None
     factor_name: str = None
     factor_name_chinese: str = None
@@ -82,6 +84,35 @@ class FactorInfo(object):
     factor_name: str = None
     factor_type: str = None  # 因子类型
 
+
+# 发送邮件
+def send_email(email, theme, contents):
+    """
+
+    :param email:
+                {"person_name": {"user": "email_address",
+                                 "password": "password",
+                                 "host": "smtp.qq.com"}}
+    :param theme: email theme
+    :param contents: email contents
+    :return:
+    """
+
+    for person in email.keys():
+        user = email[person]['user']
+        password = email[person]['password']
+        host = email[person]['host']
+        try:
+            yag = yagmail.SMTP(user=user,
+                               password=password,
+                               host=host)
+
+            yag.send([user], theme, contents)
+        except:
+            # Alternate mailbox
+            yag = yagmail.SMTP(user="18817289038@163.com", password="excejuxyyuthbiaa",
+                               host="smtp.qq.com")
+            yag.send([user], theme, contents)
 # @dataclass
 # class FactorData(object):
 #     """
