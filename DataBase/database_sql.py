@@ -136,7 +136,22 @@ def init_models(db: Database, driver: Driver):
                     for c in chunked(dicts, 1000):
                         DBFactorRetData.insert_many(c).on_conflict_replace().execute()
 
-        pass
+        def query_data(self,
+                       factor_names: tuple,
+                       ret_type: str = 'Pearson',
+                       hp: int = 1,
+                       sta_date: str = '2013-01-01',
+                       end_date: str = '2020-04-01'):
+
+            factor_sql = f"SELECT DATE_FORMAT(`date`,'%Y-%m-%d') as `date`,  factor_return, factor_name " \
+                         f"FROM dbfactorretdata " \
+                         f"WHERE factor_name IN {factor_names} " \
+                         f"AND ret_type = '{ret_type}' " \
+                         f"AND holding_period = '{hp}' " \
+                         f"AND `date` BETWEEN str_to_date('{sta_date}', '%Y-%m-%d') " \
+                         f"AND str_to_date('{end_date}', '%Y-%m-%d') "
+            res = pd.read_sql(factor_sql, con=MySQL_con)
+            return None if res.empty else res
 
     class DbFactorGroupData(ModelBase):
         """
@@ -334,9 +349,19 @@ class SqlManager(BaseDatabaseManager):
     def query_factor_data(
             self,
             factor_name: str,
-            db_name: str) -> [pd.DataFrame, None]:
+            db_name: str,
+            **kwargs) -> [pd.DataFrame, None]:
         model = getattr(self, db_name)
-        return model.query_data(model, factor_name)
+        return model.query_data(model, factor_name, **kwargs)
+
+    def query_factor_ret_data(self,
+                              factor_name: tuple,
+                              ret_type: str,
+                              hp: int,
+                              sta_date: str,
+                              end_date: str):
+        model = getattr(self, 'Ret')
+        return model.query_data(model, factor_name, ret_type, hp, sta_date, end_date)
 
     def save_factor_data(self, datas: Iterable[FactorData], db_name: str):
 

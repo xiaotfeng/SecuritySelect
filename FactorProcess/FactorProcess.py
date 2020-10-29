@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import os
+import json
 import statsmodels.api as sm
 import copy
 import time
@@ -22,7 +23,7 @@ class FactorProcess(object):
     """
     去极值，标准化，中性化，分组
     """
-    data_name = {'mv': 'mv.csv',
+    data_name = {'mv': 'MV.csv',
                  'industry': 'IndustryLabel.csv'}
 
     def __init__(self):
@@ -52,6 +53,7 @@ class FactorProcess(object):
                        data: pd.Series,
                        method: str = 'industry+mv') -> pd.Series:
         """
+        若同时纳入行业因子和市值因子需要加上截距项，若仅纳入行业因子则回归方程不带截距项！
         :param data: 因子数据
         :param method: 中心化方法
         :return: 剔除行业因素和市值因素后的因子
@@ -78,7 +80,7 @@ class FactorProcess(object):
         # read mv and industry data
         if 'mv' in method:
             if self.raw_data.get('mv', None) is None:
-                mv_data = pd.read_csv(os.path.join(FPN.process_path.value, self.data_name['mv']),
+                mv_data = pd.read_csv(os.path.join(FPN.label_pool_path.value, self.data_name['mv']),
                                       index_col=['date', 'stock_id'],
                                       usecols=['date', 'stock_id', 'liq_mv'])
                 self.raw_data['mv'] = mv_data
@@ -90,7 +92,7 @@ class FactorProcess(object):
 
         if 'industry' in method:
             if self.raw_data.get('industry', None) is None:
-                industry_data = pd.read_csv(os.path.join(FPN.process_path.value, self.data_name['industry']),
+                industry_data = pd.read_csv(os.path.join(FPN.label_pool_path.value, self.data_name['industry']),
                                             index_col=['date', 'stock_id'])
                 self.raw_data['industry'] = industry_data
             else:
@@ -121,14 +123,14 @@ class FactorProcess(object):
             return data
         elif method == 'mv':
             if self.raw_data.get('mv', None) is None:
-                mv_data = pd.read_csv(os.path.join(FPN.process_path.value, self.data_name['mv']),
+                mv_data = pd.read_csv(os.path.join(FPN.label_pool_path.value, self.data_name['mv']),
                                       index_col=['date', 'stock_id'],
                                       usecols=['date', 'stock_id', 'liq_mv'])
                 self.raw_data['mv'] = mv_data
             else:
                 mv_data = self.raw_data['mv']
 
-            stand_data = pd.concat([data, mv_data], axis=1)
+            stand_data = pd.concat([data, mv_data], axis=1, join='inner')
         else:
             stand_data = data
 
@@ -195,7 +197,7 @@ class FactorProcess(object):
              factor: pd.Series,
              outliers: str,
              neutralization: str,
-             standardization: str):
+             standardization: str) -> pd.Series:
 
         df_factor = copy.deepcopy(factor)
 
@@ -328,6 +330,7 @@ class Multicollinearity(object):
         4.最大迭代次数为300
         5.容忍度为1e-7
         """
+
         def __init__(self, data: pd.DataFrame, n: int):
             super().__init__(data, n)
 
@@ -353,119 +356,113 @@ class Multicollinearity(object):
             return limit
 
     def __init__(self):
-        pass
+        self.fp = FactorProcess()
 
     # 相关性检验
     def correlation(self, data: pd.DataFrame) -> dict:
         """
-        data需要带上双索引
+        每期有效数据过少不计算相关性
         :param data:
         :return:
         """
 
-        df_cor = data.groupby(KN.TRADE_DATE.value).corr()
+        df_cor = data.groupby(KN.TRADE_DATE.value).apply(lambda x: x.dropna().corr())
 
+        cor_GroupBy = df_cor.groupby(pd.Grouper(level=-1))
         cor_dict = {"cor": df_cor,
-                    "mean": df_cor.groupby(pd.Grouper(level=-1)).mean(),
-                    "median": df_cor.groupby(pd.Grouper(level=-1)).median(),
-                    "std": df_cor.groupby(pd.Grouper(level=-1)).std(),
-                    "ttest": df_cor.groupby(pd.Grouper(level=-1)).apply(
-                        lambda x: (abs(x) - x.mean() / x.std() * pow(len(x) - 1, 0.5))),
+                    "mean": cor_GroupBy.mean(),
+                    "median": cor_GroupBy.median(),
+                    "std": cor_GroupBy.std(),
+                    "ttest": cor_GroupBy.apply(lambda x: (abs(x) - x.mean()) / x.std() * pow(len(x) - 1, 0.5)),
                     }
 
         return cor_dict
 
     # 因子复合
-    def composite(self, factor: pd.DataFrame,
-                  holding_period: int = 1,
-                  method: str = 'equal', **Kwargs) -> pd.DataFrame:
+    def composite(self,
+                  factor: pd.DataFrame,
+                  method: str = 'equal',
+                  **kwargs) -> pd.DataFrame:
         """
-        部分权重的会用到未来数据，所以需要对权重进行平移与相应的因子值进行匹配
+        部分权重会用到未来数据，所以需要对权重进行平移与相应的因子值进行匹配
         :param factor:
-        :param holding_period:
         :param method:
-        :param Kwargs:
+        :param kwargs:
         :return:
         """
 
-        method_dict = {"equal": self.equal_weight,
+        method_dict = {"Equal": self.equal_weight,
                        "Ret": self.return_weight,
-                       "IC": self.IC_weight}
+                       "MAX_IC": self.MAX_IC_IR}
 
-        res = method_dict[method](factor, holding_period, **Kwargs)
+        res = method_dict[method](factor, **kwargs)
         return res
 
     """因子合成"""
 
     # 等权法
     @staticmethod
-    def equal_weight(fact: pd.DataFrame, holding_period, **Kwargs):
-        fact_comp = fact.groupby(KN.TRADE_DATE.value).mean()
+    def equal_weight(fact: pd.DataFrame,
+                     **kwargs):
+        fact_comp = fact.groupby(KN.TRADE_DATE.value, group_keys=False).apply(lambda x: x.mean(axis=1))
         return fact_comp
 
     # TODO Test
     def return_weight(self,
                       fact: pd.DataFrame,
-                      fact_ret: pd.DataFrame,
-                      rolling_period: int = 20,
-                      holding_period: int = 1,
-                      method='Arithmetic_mean') -> [pd.Series, None]:
+                      fact_ret: pd.DataFrame = None,
+                      hp: int = 1,
+                      rp: int = 20,
+                      algorithm='mean') -> [pd.Series, None]:
         """
         由于该地方的权重（Pearson相关性和Spearman相关性）权重都是作为标签参与了运算，
         因此相对于截面当期该数据为未来数据，需要进行平移后与相应的因子进行匹配才能作为当期截面因子的历史权重，
         系统默认计算收益率采用open价格，所以，若调仓周期为N天，则需要平移 N + 1 + 1天。
-        :param fact: 因子
+        :param fact: 标准化后的因子
         :param fact_ret: 因子收益率
-        :param rolling_period: 权重滚动计算周期
-        :param holding_period: 标的持有周期（调仓周期）
-        :param method: 权重计算方法
+        :param rp: 权重滚动计算周期
+        :param hp: 标的持有周期（调仓周期）
+        :param algorithm: 权重计算方法
         :return:
         """
 
-        if method == 'Arithmetic_mean':
-            fact_weight = fact_ret.rolling(rolling_period).mean()
-
-        elif method == 'Half_time':
-            weight_list = self._Half_time(rolling_period)
-            fact_weight = fact_ret.rolling(rolling_period).apply(lambda x: x.mul(weight_list, axis='index'))
-
-        else:
-            return None
+        fact_weight = abs(self._weight(fact_ret, rp, algorithm))
 
         # 权重归一化
         fact_weight_std = fact_weight.div(fact_weight.sum(axis=1), axis=0)
         # 权重与因子值匹配
-        fact_weight_std = fact_weight_std.shift(holding_period)
+        fact_weight_std = fact_weight_std.shift(hp + 1)  # TODO 不同的价格平移周期不一样
+        # 复合因子
         fact_comp = fact.mul(fact_weight_std).sum(axis=1)
 
         return fact_comp
 
-    def IC_weight(self,
-                  fact: pd.DataFrame,
-                  fact_IC: pd.DataFrame,
-                  rolling_period: int = 20,
-                  holding_period: int = 1,
-                  method='Arithmetic_mean'):
-
-        return self.return_weight(fact, fact_IC, rolling_period, holding_period, method)
+    # def IC_weight(self,
+    #               fact: pd.DataFrame,
+    #               fact_IC: pd.DataFrame,
+    #               rp: int = 20,
+    #               hp: int = 1,
+    #               algorithm='mean'):
+    #
+    #     return self.return_weight(fact, fact_IC, rp, hp, algorithm)
 
     def MAX_IC_IR(self,
                   fact: pd.DataFrame,
-                  fact_IC: pd.DataFrame,
-                  rolling_period: int = 20,
-                  holding_period: int = 1,
-                  method='IC_IR',
+                  fact_ret: pd.DataFrame = None,
+                  hp: int = 1,
+                  rp: int = 20,
+                  way='IC_IR',
                   comp_name: str = 'comp_factor'):
 
         # 对收益率进行调整
-        ret_real = fact_IC.shift(holding_period).dropna()
+        ret_real = fact_ret.shift(hp).dropna()
 
         w_list = []
-        for i in range(rolling_period, ret_real.shape[0] + 1):
-            df_ = ret_real.iloc[i - rolling_period: i, :]
+        for i in range(rp, ret_real.shape[0] + 1):
+            df_ = ret_real.iloc[i - rp: i, :]
             opt = self.OPT(df_)
 
-            if method == 'IC':
+            if way == 'IC':
                 opt.data_cov = np.array(fact.loc[df_.index].cov())
 
             res_ = opt.solve()
@@ -474,18 +471,18 @@ class Multicollinearity(object):
             w_list.append(w_s)
 
         w_df = pd.DataFrame(w_list)
-        # W = w_df.shift(holding_period)
+        # W = w_df.shift(hp)
         fact_comp = fact.mul(w_df).sum(axis=1)
         fact_comp.name = fact_comp
         return fact_comp
 
     def PCA(self,
             fact: pd.DataFrame,
-            rolling_period: int = 20):
+            rp: int = 20):
 
         w_list = []
-        for i in range(rolling_period, fact.shape[0] + 1):
-            df_ = fact.iloc[i - rolling_period: i, :]
+        for i in range(rp, fact.shape[0] + 1):
+            df_ = fact.iloc[i - rp: i, :]
 
             pca = PCA(n_components=1)
             pca.fit(np.array(df_))
@@ -498,6 +495,21 @@ class Multicollinearity(object):
         fact_comp.name = fact_comp
 
         return fact_comp
+
+    def _weight(self,
+                data: pd.DataFrame = None,
+                rp: int = 60,
+                algorithm: str = 'mean') -> [pd.DataFrame, None]:
+
+        if algorithm == 'mean':
+            data_weight = data.rolling(rp).mean()
+        elif algorithm == 'Half_time':
+            weight_list = self._Half_time(rp)
+            data_weight = data.rolling(rp).apply(lambda x: np.dot(x, weight_list))
+        else:
+            data_weight = None
+
+        return data_weight
 
     # 半衰权重
     @staticmethod
@@ -512,8 +524,8 @@ class Multicollinearity(object):
 
 if __name__ == '__main__':
     A = Multicollinearity()
-    data_ = np.random.rand(1000).reshape(200, 5)
-    IC = pd.DataFrame(data_)
+    data_array = np.random.rand(1000).reshape(200, 5)
+    IC = pd.DataFrame(data_array)
     A.PCA(IC)
     # A.neutralization('s', method='industry+mv')
     # df_stock = pd.read_csv("D:\\Quant\\SecuritySelect\\Data\\AStockData.csv")

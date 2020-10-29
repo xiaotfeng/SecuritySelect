@@ -41,12 +41,14 @@ class FinancialQualityFactor(FactorBase):  # TODO 修改
         data.sort_index(inplace=True)
 
         data[func_name] = data[cash_sales] / data[operator_income]
-        data = data.reset_index()
+        data[func_name][np.isinf(data[func_name])] = np.nan
 
         if switch:
-            data_fact = cls()._switch_freq(data_=data, name=func_name)
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
         else:
             data_fact = None
+
+        data = data.reset_index()
 
         F = FactorInfo()
         F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
@@ -69,14 +71,15 @@ class FinancialQualityFactor(FactorBase):  # TODO 修改
         data.sort_index(inplace=True)
 
         CSR = data[cash_sales] / data[operator_income]
-        data[func_name] = CSR - CSR.shift(1)
-
-        data = data.reset_index()
+        CSR[np.isinf(CSR)] = np.nan
+        data[func_name] = CSR.diff(1)
 
         if switch:
-            data_fact = cls()._switch_freq(data_=data, name=func_name)
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
         else:
             data_fact = None
+
+        data = data.reset_index()
 
         F = FactorInfo()
         F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
@@ -106,14 +109,17 @@ class FinancialQualityFactor(FactorBase):  # TODO 修改
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
+        # 缺失科目填补为0
+        data[op_net_cash_flow].fillna(0, inplace=True)
         data[func_name] = (data[operator_profit] - data[op_net_cash_flow]) / data[operator_profit]
-
-        data = data.reset_index()
+        data[func_name][np.isinf(data[func_name])] = np.nan
 
         if switch:
-            data_fact = cls()._switch_freq(data_=data, name=func_name)
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
         else:
             data_fact = None
+
+        data = data.reset_index()
 
         F = FactorInfo()
         F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
@@ -135,14 +141,18 @@ class FinancialQualityFactor(FactorBase):  # TODO 修改
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
+        # 缺失科目填补为0
+        data[op_net_cash_flow].fillna(0, inplace=True)
         data["APR"] = (data[operator_profit] - data[op_net_cash_flow]) / data[operator_profit]
+        data["APR"][np.isinf(data["APR"])] = np.nan
         data[func_name] = data["APR"].groupby(KN.STOCK_ID.value).diff(1)
-        data = data.reset_index()
 
         if switch:
-            data_fact = cls()._switch_freq(data_=data, name=func_name)
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
         else:
             data_fact = None
+
+        data = data.reset_index()
 
         F = FactorInfo()
         F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
@@ -173,10 +183,10 @@ class FinancialQualityFactor(FactorBase):  # TODO 修改
         # TTM
         operator_income = cls()._switch_ttm(financial_data, FISN.Op_Income.value)
         cash_sales = cls()._switch_ttm(financial_data, FCFSN.Cash_From_Sales.value)
-
         financial_data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         financial_data[FISN.Op_Income.value] = operator_income
         financial_data[FCFSN.Cash_From_Sales.value] = cash_sales
+
         financial_data.reset_index(inplace=True)
         return financial_data
 
@@ -211,6 +221,7 @@ class FinancialQualityFactor(FactorBase):  # TODO 修改
         financial_data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         financial_data[FISN.Op_Pro.value] = operator_profit
         financial_data[FCFSN.Op_Net_CF.value] = cash_operator
+
         financial_data.reset_index(inplace=True)
         return financial_data
 

@@ -62,18 +62,16 @@ class FactorBase(object):
             lambda x: x.sort_values(
                 by=[KN.TRADE_DATE.value, SN.REPORT_DATE.value]).drop_duplicates(subset=[KN.TRADE_DATE.value],
                                                                                 keep='last'))
-        data_sub = data_sub.reset_index()
+        data_sub.reset_index(inplace=True)
 
         # 交易日填充
         data_trade_date = data_sub.groupby(KN.STOCK_ID.value, group_keys=False).apply(_reindex, name)
-        res = data_trade_date.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value])
+        res = data_trade_date.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value]).sort_index()
 
         # 历史数据有限填充因子值
-        res[name] = res[name].groupby(KN.STOCK_ID.value,
-                                      group_keys=False).apply(lambda x: x.sort_index().fillna(method='ffill',
-                                                                                              limit=limit))
+        res[name] = res[name].groupby(KN.STOCK_ID.value, group_keys=False).apply(lambda x: x.ffill(limit=limit))
 
-        res.dropna(inplace=True)
+        res.dropna(subset=[name], inplace=True)
         if 'index' in res.columns:
             res.drop(columns='index', inplace=True)
         return res
@@ -85,27 +83,21 @@ class FactorBase(object):
 
     def _switch_ttm(self, data_: pd.DataFrame, name: str):
         """
-        计算TTM
+        计算TTM，groupby后要排序
         """
-        data_copy = copy.deepcopy(data_)
-        data_copy.sort_index(inplace=True)
 
-        def _pros(data_sub: pd.DataFrame, name_: str):
-            # print(data_sub.index[0][-1])
-            data_sub[name_ + '1'] = data_sub[name_].shift(1).fillna(0)
-            data_sub[name_ + 'dirty'] = data_sub[name_] - data_sub[name_ + '1']
-            data_sub[name_ + 'dirty'] = np.nan if data_sub['month'][0] != '03' else data_sub[name_ + 'dirty']
-
-            res_ = pd.concat([data_sub[data_sub['month'] == '03'][name_],
-                              data_sub[data_sub['month'] != '03'][name_ + 'dirty']])
-
-            res_ = res_.droplevel(level='stock_id').sort_index().rolling(4).sum()
+        def _pros_ttm(data_sub: pd.DataFrame, name_: str):
+            data_sub[name_ + '_TTM'] = data_sub[name_].diff(1)
+            res_ = data_sub[data_sub['M'] == '03'][name_].append(data_sub[data_sub['M'] != '03'][name_ + '_TTM'])
+            res_ = res_.droplevel(level=KN.STOCK_ID.value).sort_index().rolling(4).sum()
             return res_
 
-        data_copy['month'] = data_copy[SN.REPORT_DATE.value].apply(lambda x: x[5:7])
+        data_copy = copy.deepcopy(data_)
+        data_copy['M'] = data_copy[SN.REPORT_DATE.value].apply(lambda x: x[5:7])
         data_copy.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        data_copy.sort_index(inplace=True)
 
-        res = data_copy[[name, 'month']].groupby(KN.STOCK_ID.value).apply(_pros, name)
+        res = data_copy[[name, 'M']].groupby(KN.STOCK_ID.value).apply(_pros_ttm, name)
 
         res.index = res.index.swaplevel(0, 1)
         res.name = name

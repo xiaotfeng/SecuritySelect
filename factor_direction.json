@@ -1,0 +1,124 @@
+{
+  "Category1": "1.成长类因子",
+
+  "BPS_G_LR": "+",
+  "EPS_G_ttm": "+",
+  "ROA_G_ttm": "+",
+  "TA_G_LR": "",
+  "TA_G_ttm": "",
+  "LA_G_LR": "",
+  "LA_G_ttm": "",
+  "ILA_G_LR": "",
+  "ILA_G_ttm": "",
+  "TA_G_LR_std": "-",
+  "TA_G_ttm_std": "-",
+  "LA_G_LR_std": "",
+  "LA_G_ttm_std": "",
+  "ILA_G_LR_std": "",
+  "ILA_G_ttm_std": "-",
+
+  "NP_Acc": "",
+  "NP_Stable": "+",
+  "NP_SD": "",
+
+  "OP_Acc": "",
+  "OP_Stable": "+",
+  "OP_SD": "",
+
+  "OR_Acc": "",
+  "OR_Stable": "+",
+  "OR_SD": "",
+
+
+  "Category2": "2.估值类因子",
+
+  "E2P_ttm": "+",
+  "EP_ttm": "+",
+  "EP_LR": "+",
+  "EP_cut_ttm": "+",
+  "PEG_ttm": "",
+  "BP_LR": "+",
+  "BP_ttm": "+",
+  "FCFP_LR": "",
+  "FCFP_ttm": "",
+  "NCFP_ttm": "",
+  "OCFP_ttm": "",
+  "DP_ttm": "+",
+  "SP_ttm": "+",
+  "SP_LR": "+",
+  "EV2EBITDA_LR": "",
+
+  "Category3":"3.营运能力类因子",
+
+  "RROC_N": "+",
+  "OCFA": "",
+  "TA_Turn_ttm": "",
+
+  "Category4": "4.偿债能力因子",
+
+  "Int_to_Asset": "-",
+
+  "ShortDebt1_CFPA": "",
+  "ShortDebt1_CFPA_qoq": "",
+  "ShortDebt1_CFPA_qoq_abs": "",
+  "ShortDebt1_CFPA_std": "",
+
+  "ShortDebt2_CFPA": "",
+  "ShortDebt2_CFPA_qoq": "",
+  "ShortDebt2_CFPA_qoq_abs": "+",
+  "ShortDebt2_CFPA_std": "",
+
+  "ShortDebt3_CFPA": "",
+  "ShortDebt3_CFPA_qoq": "",
+  "ShortDebt3_CFPA_qoq_abs": "+",
+  "ShortDebt3_CFPA_std": "+",
+
+  "IT_qoq_Z": "+",
+  "PTCF_qoq_Z": "",
+  "OT_qoq_Z": "",
+  "OT2NP_qoq_Z": "-",
+  "PT2NA_Z": "",
+
+  "Category5": "5.收益质量因子",
+
+  "CSR": "",
+  "CSRD": "",
+  "APR": "",
+  "APRD": "",
+
+  "Category6": "6.动量因子",
+
+  "MTM_gen_1": "",
+  "MTM_gen_2": "",
+  "MTM_gen_3": "",
+  "MTM_gen_20": "",
+  "MTM_gen_60": "",
+
+  "MTM_bt_day_1": "",
+  "MTM_bt_day_2": "",
+  "MTM_bt_day_3": "",
+  "MTM_bt_day_20": "",
+  "MTM_bt_day_60": "",
+
+  "MTM_in_day_1": "",
+  "MTM_in_day_2": "",
+  "MTM_in_day_3": "",
+  "MTM_in_day_20": "",
+  "MTM_in_day_60": "",
+
+  "MTM_N_P_1": "",
+  "MTM_N_P_2": "",
+  "MTM_N_P_3": "",
+  "MTM_N_P_20": "",
+  "MTM_N_P_60": "",
+
+
+  "Category7": "7.盈利能力因子",
+
+  "ROA_ttm": "+",
+  "DPR_ttm": "",
+  "NP": "",
+  "NP_ttm": "",
+  "OPM": "",
+  "OPM_ttm": ""
+}

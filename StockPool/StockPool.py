@@ -145,16 +145,16 @@ class StockPool(object):
             self.ST(data_input)
 
             print(f"{dt.datetime.now().strftime('%X')}: Weed out Price Up_Down limit stock")
-            self.price_limit(data_input, PVN.Up_Down.value)
+            # self.price_limit(data_input, PVN.Up_Down.value)
 
             print(f"{dt.datetime.now().strftime('%X')}: Weed out stock established in less than 3 months")
-            self.established(data=data_input, days=90)
+            self.established(data=data_input, days=225)
 
             print(f"{dt.datetime.now().strftime('%X')}: Weed out stock illiquidity")
-            self.liquidity(data_input)
+            # self.liquidity(data_input)
 
             print(f"{dt.datetime.now().strftime('%X')}: Weed out suspension stock")
-            self.suspension(data_input)
+            # self.suspension(data_input)
 
             # Filter
             index_effect_stock = reduce(lambda x, y: x.intersection(y), self.index_list)

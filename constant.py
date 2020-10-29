@@ -13,14 +13,17 @@ mem = psutil.virtual_memory()
 
 @unique
 class FilePathName(Enum):
-    stock_pool_path = 'A:\\数据\\StockPool'  # 股票池数据
-    label_pool_path = 'A:\\数据\\LabelPool'  # 标签池数据
-    process_path = 'A:\\数据\\Process'  # 因子预处理所需数据
+    stock_pool_path = 'A:\\SecuritySelectData\\StockPool'  # 股票池数据
+    label_pool_path = 'A:\\SecuritySelectData\\LabelPool'  # 标签池数据
+    process_path = 'A:\\SecuritySelectData\\Process'  # 因子预处理所需数据
 
-    factor_pool_path = 'A:\\数据\\FactorPool\\'  # 因子池
-    factor_inputData = 'A:\\数据\\FactorPool\\Factor_InputData\\'  # 因子计算所需数据
-    factor_raw_data = "A:\\数据\\FactorPool\\Factor_Raw_Data\\"  #
-    factor_ef = "A:\\数据\\FactorPool\\Factors_Effectiveness\\"  # 因子检验结果保存
+    factor_pool_path = 'A:\\SecuritySelectData\\FactorPool\\'  # 因子池
+    factor_inputData = 'A:\\SecuritySelectData\\FactorPool\\Factor_InputData\\'  # 因子计算所需数据
+    FactorSwitchFreqData = "A:\\SecuritySelectData\\FactorPool\\FactorSwitchFreqData\\"  # 频率转换后的因子集
+    FactorRawData = "A:\\SecuritySelectData\\FactorPool\\FactorRawData\\"  # 原始因子集（未经任何处理）
+    factor_ef = "A:\\SecuritySelectData\\FactorPool\\FactorEffective\\"  # 初步筛选有效因子集
+    factor_test_res = "A:\\SecuritySelectData\\FactorPool\\FactorsTestResult\\"  # 因子检验结果保存
+    factor_comp = "A:\\SecuritySelectData\\FactorPool\\FactorComp\\"  # 复合因子数据集
 
 
 @unique
@@ -35,8 +38,13 @@ class SpecialName(Enum):
     GROUP = 'group'
 
     INDUSTRY_FLAG = 'industry_flag'
-    CSI_300_INDUSTRY_WEIGHT = 'csi_300_industry_weight'
+    CSI_300_INDUSTRY_WEIGHT = 'csi_300_weight'
+    CSI_500_INDUSTRY_WEIGHT = 'csi_500_weight'
+    CSI_50_INDUSTRY_WEIGHT = 'csi_50_weight'
 
+    CSI_300_INDUSTRY_MV = 'csi_300_mv'
+    CSI_500_INDUSTRY_MV = 'csi_500_mv'
+    CSI_50_INDUSTRY_MV = 'csi_50_mv'
     ANN_DATE = 'date'
     REPORT_DATE = 'report_date'
 
@@ -113,7 +121,6 @@ class FinancialIncomeSheetName(Enum):
 
 @unique
 class FinancialCashFlowSheetName(Enum):
-
     Net_CF = 'net_cash_flow'  # 净现金流
     Op_Net_CF = 'op_net_cash_flow'  # 经营性活动产生的现金流量净额
     All_Tax = 'tax_all'  # 支付的各项税费
@@ -121,6 +128,21 @@ class FinancialCashFlowSheetName(Enum):
     Cash_From_Sales = 'cash_sales'  # 销售商品、提供劳务收到的现金
 
     Free_Cash_Flow = 'FCFF'  # 自由现金流
+
+
+@unique
+class FactorCategoryName(Enum):
+    Val = 'ValuationFactor'
+    Gro = 'GrowthFactors'
+    Pro = 'ProfitabilityFactor'
+    Sol = 'SolvencyFactor'
+    Ope = 'OperationFactor'
+    EQ = 'EaringQualityFactor'
+
+
+@unique
+class StrategyName(Enum):
+    pass
 
 
 def timer(func):
@@ -148,8 +170,6 @@ def timer(func):
     return wrapper
 
 
-
-
 def memory_cal(func):
     mem = psutil.virtual_memory()
     mem_start = mem.used / 1024 / 1024 / 1024
@@ -159,5 +179,4 @@ def memory_cal(func):
 
 
 if __name__ == '__main__':
-
     print('s')

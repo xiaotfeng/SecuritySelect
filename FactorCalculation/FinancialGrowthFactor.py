@@ -32,7 +32,7 @@ class FinancialGrowthFactor(FactorBase):
                  act_capital: str = FBSN.Actual_Capital.value,
                  switch: bool = False):
         """
-        每股净资产增长率 = （期末（净资产 / 实收资本） - 期初（净资产 / 实收资本）） / 期初（净资产 / 实收资本）
+        每股净资产增长率 = （期末净资产 - 期初净资产） / 期初实收资本
         :param data:
         :param net_asset_in:净资产（含少数股东权益）
         :param act_capital: 实收资本
@@ -43,9 +43,11 @@ class FinancialGrowthFactor(FactorBase):
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
-        data["BP"] = data[net_asset_in] / data[act_capital]
-        data[func_name] = data["BP"].groupby(KN.STOCK_ID.value,
-                                             group_keys=False).apply(lambda x: (x - x.shift(1)) / x)
+        # data["BP"] = data[net_asset_in].diff(1) / data[act_capital].shift(1)
+        data[func_name] = data.groupby(KN.STOCK_ID.value,
+                                       group_keys=False).apply(
+            lambda x: x[net_asset_in].diff(1) / x[act_capital].shift(1))
+
         data[func_name][np.isinf(data[func_name])] = np.nan
 
         if switch:
@@ -75,9 +77,9 @@ class FinancialGrowthFactor(FactorBase):
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
-        data["EPS"] = data[net_pro_ex] / data[act_capital]
-        data[func_name] = data["EPS"].groupby(KN.STOCK_ID.value,
-                                              group_keys=False).apply(lambda x: (x - x.shift(1)) / x)
+        data[func_name] = data.groupby(KN.STOCK_ID.value,
+                                       group_keys=False).apply(
+            lambda x: x[net_pro_ex].diff(1) / x[act_capital].shift(1))
         data[func_name][np.isinf(data[func_name])] = np.nan
 
         if switch:
@@ -107,8 +109,9 @@ class FinancialGrowthFactor(FactorBase):
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
-        data["ROA"] = data[net_profit_in] / data[total_asset]
-        data[func_name] = data["ROA"].groupby(KN.STOCK_ID.value, group_keys=False).apply(lambda x: (x - x.shift(1)) / x)
+        data[func_name] = data.groupby(KN.STOCK_ID.value,
+                                       group_keys=False).apply(
+            lambda x: x[net_profit_in].diff(1) / x[total_asset].shift(1))
         data[func_name][np.isinf(data[func_name])] = np.nan
 
         if switch:
@@ -141,7 +144,7 @@ class FinancialGrowthFactor(FactorBase):
         data[func_name][np.isinf(data[func_name])] = np.nan  # 无限大值
 
         if switch:
-            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=60)
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
         else:
             data_fact = None
 
@@ -149,7 +152,7 @@ class FinancialGrowthFactor(FactorBase):
 
         F = FactorInfo()
         F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
-        F.data = data_fact[func_name]
+        F.data = data_fact
         F.factor_type = data['type'][0]
         F.factor_category = cls().__class__.__name__
         F.factor_name = func_name
@@ -583,7 +586,7 @@ class FinancialGrowthFactor(FactorBase):
                                                      group_keys=False).rolling(quarter).std()
         data['NP_Stable'] = data["NP_Mean"] / data["NP_Std"]
         # 净利润稳健加速度
-        data[func_name] = data['NP_Stable'].groupby(KN.STOCK_ID.value).diff(periods=1)
+        data[func_name] = data['NP_Stable'].groupby(KN.STOCK_ID.value).diff(1)
 
         if switch:
             data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
@@ -684,7 +687,7 @@ class FinancialGrowthFactor(FactorBase):
         data["OP_Stable"] = data["OP_Mean"] / data["OP_Std"]
 
         # 净利润稳健加速度
-        data[func_name] = data['OP_Stable'].groupby(KN.STOCK_ID.value).diff(periods=1)
+        data[func_name] = data['OP_Stable'].groupby(KN.STOCK_ID.value).diff(1)
 
         if switch:
             data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
@@ -785,7 +788,85 @@ class FinancialGrowthFactor(FactorBase):
                                                        group_keys=False).rolling(quarter).std()
         data['OR_Stable'] = data["OR_Mean"] / data["OR_Std"]
         # 营业收入稳健加速度
-        data[func_name] = data['OR_Stable'].groupby(KN.STOCK_ID.value).diff(periods=1)
+        data[func_name] = data['OR_Stable'].groupby(KN.STOCK_ID.value).diff(1)
+
+        if switch:
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
+        else:
+            data_fact = None
+
+        data = data.reset_index()
+
+        F = FactorInfo()
+        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
+        F.data = data_fact
+        F.factor_type = data['type'][0]
+        F.factor_category = cls().__class__.__name__
+        F.factor_name = func_name
+
+        return F
+
+    @classmethod
+    def MAR_G(cls,
+              data: pd.DataFrame,
+              operator_income: str = FISN.Op_Income.value,
+              operator_cost: str = FISN.Op_Cost.value,
+              switch: bool = False):
+        """
+        毛利润率 = （本期毛利润 – 上期毛利润）/ 上期营业收入
+        :param data:
+        :param operator_income:
+        :param operator_cost:
+        :param switch:
+        :return:
+        """
+        func_name = sys._getframe().f_code.co_name
+        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        data.sort_index(inplace=True)
+
+        data[[operator_income, operator_cost]] = data[[operator_income, operator_cost]].dropna(how='all').fillna(0)
+        data['gross_profit'] = data[operator_income] - data[operator_cost]
+        data[func_name] = data.groupby(KN.STOCK_ID.value,
+                                       group_keys=False).apply(
+            lambda x: x['gross_profit'].diff(1) / x[operator_income].shift(1))
+        data[func_name][np.isinf(data[func_name])] = np.nan
+
+        if switch:
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
+        else:
+            data_fact = None
+
+        data = data.reset_index()
+
+        F = FactorInfo()
+        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
+        F.data = data_fact
+        F.factor_type = data['type'][0]
+        F.factor_category = cls().__class__.__name__
+        F.factor_name = func_name
+
+        return F
+
+    @classmethod
+    def NP_G(cls,
+             data: pd.DataFrame,
+             net_profit_ex: str = FISN.Net_Pro_Ex.value,
+             switch: bool = False):
+        """
+        净利润增长率 = (本期净利润 - 去年同期净利润) / ABS(去年同期净利润)
+        :param data:
+        :param net_profit_ex:
+        :param switch:
+        :return:
+        """
+        func_name = sys._getframe().f_code.co_name
+        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        data.sort_index(inplace=True)
+
+        # TODO 重复索引问题
+        data[func_name] = data.groupby(KN.STOCK_ID.value,
+                                       group_keys=False).apply(
+            lambda x: x[net_profit_ex].diff(4) / abs(x[net_profit_ex].shift(4)))
 
         if switch:
             data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
@@ -1098,6 +1179,47 @@ class FinancialGrowthFactor(FactorBase):
 
         return financial_data
 
+    @classmethod
+    def MAR_G_data_raw(cls,
+                       sta: int = 20130101,
+                       end: int = 20200401,
+                       f_type: str = '408001000'):
+        sql_keys = {"IST": {"OPER_REV": f"\"{FISN.Op_Income.value}\"",
+                            "LESS_OPER_COST": f"\"{FISN.Op_Cost.value}\""}
+                    }
+        sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
+        financial_data = cls().Q.query(sql_)
+        # 过滤未上市公司
+        data_ = pd.merge(financial_data, cls().list_date, on=[KN.STOCK_ID.value], how='left')
+        financial_data = data_[data_[KN.TRADE_DATE.value] >= data_[KN.LIST_DATE.value]]
+
+        # switch ttm
+        operate_income = cls()._switch_ttm(financial_data, FISN.Op_Income.value)
+        operate_cost = cls()._switch_ttm(financial_data, FISN.Op_Cost.value)
+
+        financial_data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        financial_data[FISN.Op_Income.value] = operate_income
+        financial_data[FISN.Op_Cost.value] = operate_cost
+        financial_data.reset_index(inplace=True)
+
+        return financial_data
+
+    @classmethod
+    def NP_G_data_raw(cls,
+                      sta: int = 20130101,
+                      end: int = 20200401,
+                      f_type: str = '408001000'):
+        sql_keys = {"IST": {"NET_PROFIT_EXCL_MIN_INT_INC": f"\"{FISN.Net_Pro_Ex.value}\""}
+                    }
+        sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
+        financial_data = cls().Q.query(sql_)
+
+        # 过滤未上市公司
+        data_ = pd.merge(financial_data, cls().list_date, on=[KN.STOCK_ID.value], how='left')
+        financial_data = data_[data_[KN.TRADE_DATE.value] >= data_[KN.LIST_DATE.value]]
+
+        return financial_data
+
     @staticmethod
     def _reg(x: pd.Series) -> float:
         """
@@ -1105,19 +1227,17 @@ class FinancialGrowthFactor(FactorBase):
         :param x:
         :return:
         """
-        if x.isna().sum() > 0:
+        if sum(np.isnan(x)) > 0:
             return np.nan
         try:
-            x = x.sort_index()
             X = pd.DataFrame(data={"T2": [i ** 2 for i in range(1, len(x) + 1)],
-                                   "T": [i for i in range(1, len(x) + 1)]},
-                             index=x.index)
-            Y = x
+                                   "T": [i for i in range(1, len(x) + 1)]})
+            Y = pd.Series(x)
             X = sm.add_constant(X)
             reg = sm.OLS(Y, X).fit()
             alpha = reg.params["T2"]
         except np.linalg.LinAlgError as e:
-            print(f"矩阵不可逆：{x.index[0][1]} {e}")
+            print(f"矩阵不可逆：{e}")
             return np.nan
         else:
             return alpha

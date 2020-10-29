@@ -39,8 +39,7 @@ class FinancialOperationFactor(FactorBase):
 
         # 标准化
         reg_input = data[[operator_income,
-                          operator_cost]].apply(
-            lambda x: x.groupby(KN.STOCK_ID.value).apply(lambda y: (y - y.mean()) / y.std()))
+                          operator_cost]].groupby(KN.STOCK_ID.value).apply(lambda x: (x - x.mean()) / x.std())
 
         # 回归取残差
         data[func_name] = reg_input.groupby(KN.STOCK_ID.value,
@@ -48,12 +47,13 @@ class FinancialOperationFactor(FactorBase):
             lambda x: cls._reg_rolling(x, operator_cost, operator_income,
                                        has_cons=True,
                                        win=quarter))
-        data = data.reset_index()
 
         if switch:
-            data_fact = cls()._switch_freq(data_=data, name=func_name)
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
         else:
             data_fact = None
+
+        data = data.reset_index()
 
         F = FactorInfo()
         F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
@@ -84,12 +84,13 @@ class FinancialOperationFactor(FactorBase):
                                        y_name=operator_total_cost,
                                        has_cons=True,
                                        win=quarter))
-        data = data.reset_index()
 
         if switch:
-            data_fact = cls()._switch_freq(data_=data, name=func_name)
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
         else:
             data_fact = None
+
+        data = data.reset_index()
 
         F = FactorInfo()
         F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
@@ -100,7 +101,7 @@ class FinancialOperationFactor(FactorBase):
 
         return F
 
-    @classmethod  # TODO 先用营业收入代替
+    @classmethod
     def TA_Turn_ttm(cls,
                     data: pd.DataFrame,
                     operator_income: str = FISN.Op_Income.value,
@@ -108,21 +109,23 @@ class FinancialOperationFactor(FactorBase):
                     switch: bool = False):
 
         """
-        总资产周转率 = 营业收入净额 / 平均资产总额
+        总资产周转率 = 营业收入 / 平均资产总额
         :return:
         """
         func_name = sys._getframe().f_code.co_name
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
+        data[total_asset] = data[total_asset].groupby(KN.STOCK_ID.value,
+                                                      group_keys=False).rolling(2, min_periods=1).mean()
         data[func_name] = data[operator_income] / data[total_asset]
 
-        data = data.reset_index()
-
         if switch:
-            data_fact = cls()._switch_freq(data_=data, name=func_name)
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
         else:
             data_fact = None
+
+        data = data.reset_index()
 
         F = FactorInfo()
         F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
@@ -139,7 +142,8 @@ class FinancialOperationFactor(FactorBase):
                         sta: int = 20130101,
                         end: int = 20200401,
                         f_type: str = '408001000'):
-        sql_keys = {"IST": {"OPER_REV": f"\"{FISN.Op_Income.value}\"", "LESS_OPER_COST": f"\"{FISN.Op_Cost.value}\""}
+        sql_keys = {"IST": {"OPER_REV": f"\"{FISN.Op_Income.value}\"",
+                            "LESS_OPER_COST": f"\"{FISN.Op_Cost.value}\""}
                     }
 
         sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
@@ -187,8 +191,10 @@ class FinancialOperationFactor(FactorBase):
 
         # TTM
         operator_income = cls()._switch_ttm(financial_data, FISN.Op_Income.value)
+        total_asset = cls()._switch_ttm(financial_data, FBSN.Total_Asset.value)
         financial_data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         financial_data[FISN.Op_Income.value] = operator_income
+        financial_data[FBSN.Total_Asset.value] = total_asset
 
         financial_data.reset_index(inplace=True)
         return financial_data

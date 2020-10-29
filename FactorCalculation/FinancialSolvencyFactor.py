@@ -833,7 +833,7 @@ class FinancialSolvencyFactor(FactorBase):
 
         return F
 
-    @classmethod
+    @classmethod  # TODO test
     def PTCF_qoq_Z(cls,
                    data: pd.DataFrame,
                    all_tax: str = FCFSN.All_Tax.value,

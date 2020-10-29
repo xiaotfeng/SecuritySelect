@@ -14,8 +14,6 @@ import seaborn as sns
 import copy
 import datetime as dt
 
-from sklearn.linear_model.tests.test_ransac import outliers
-
 from SecuritySelect.DataBase import database_manager
 from SecuritySelect.Object import (
     FactorInfo,
@@ -30,7 +28,7 @@ from SecuritySelect.FactorCalculation import FactorPool
 from SecuritySelect.LabelPool.Labelpool import LabelPool
 from SecuritySelect.StockPool.StockPool import StockPool
 
-from SecuritySelect.FactorProcess.FactorProcess import FactorProcess
+from SecuritySelect.FactorProcess.FactorProcess import FactorProcess, Multicollinearity
 from SecuritySelect.FactorCalculation.FactorBase import FactorBase
 from SecuritySelect.EvaluationIndicitor.Indicator import Indicator
 
@@ -39,7 +37,8 @@ from SecuritySelect.constant import (
     KeyName as KN,
     PriceVolumeName as PVN,
     FilePathName as FPN,
-    SpecialName as SN
+    SpecialName as SN,
+    FactorCategoryName as FCN
 )
 
 warnings.filterwarnings(action='ignore')
@@ -133,14 +132,11 @@ class FactorValidityCheck(object):
     data_save_path = 'Data'
 
     parent_path = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-    #
-    # factor_pool_path_ = 'A:\\数据\\FactorPool\\'  # 因子池
-    # factor_result = "A:\\数据\\FactorPool\\FactorResult\\"  #
 
     def __init__(self):
 
-        # self.db = database_manager
-        # self.Q = SQL()
+        self.db = database_manager
+        self.Q = SQL()
 
         self.Factor = FactorPool()  # 因子池
         self.Label = LabelPool()  # 标签池
@@ -216,13 +212,11 @@ class FactorValidityCheck(object):
     @timer
     def load_factor(self,
                     fact_name: str,
-                    fact_params: dict,
                     **kwargs
                     ):
         """
         优先直接获取数据--否则数据库调取--最后实时计算
         :param fact_name:
-        :param fact_params:
         :param kwargs:
         :return:
         """
@@ -237,8 +231,9 @@ class FactorValidityCheck(object):
                     print(f"{dt.datetime.now().strftime('%X')}: Unable to load raw data that to calculate factor!")
                     return
                 else:
-                    factor_class = self.Factor.factor[fact_name](data=self.data_input["factor_raw_data"].copy(deep=True),
-                                                                 **fact_params)
+                    factor_class = self.Factor.factor[fact_name](
+                        data=self.data_input["factor_raw_data"].copy(deep=True),
+                        **kwargs['factor_params'])
             else:
                 factor_data_ = self.db.query_factor_data(factor_name=fact_name, db_name=kwargs['db_name'])
 
@@ -261,26 +256,26 @@ class FactorValidityCheck(object):
 
     @timer
     def process_factor(self,
+                       data: pd.Series,
                        outliers: str,
                        neutralization: str,
-                       standardization: str,
-                       switch_freq: bool = False):
+                       standardization: str):
         """
+        :param data:
         :param outliers: 异常值处理
         :param neutralization: 中心化处理
         :param standardization: 标准化处理
-        :param switch_freq: 数据频率的转换
+
         :return:
         """
-        factor_raw = self.factor_dict[self.fact_name].data.copy(deep=True)  # 获取因子数据
+        if data is None:
+            factor_raw = self.factor_dict[self.fact_name].data.copy(deep=True)  # 获取因子数据
+        else:
+            factor_raw = data.copy(deep=True)
 
         if factor_raw is None:
             print("factor data is None!")
             return
-
-        # 数据频率的转换
-        if switch_freq:
-            factor_raw = FactorBase()._switch_freq(data_=factor_raw, name=self.fact_name, limit=120)
 
         factor_raw = factor_raw[self.fact_name] if isinstance(factor_raw, pd.DataFrame) else factor_raw
 
@@ -300,14 +295,40 @@ class FactorValidityCheck(object):
 
     # Data Integration
     @timer
-    def integration(self, bm: str = 'all'):
+    def integration(self,
+                    outliers: str,
+                    neu: str,
+                    stand: str,
+                    switch_freq: bool = False,
+                    limit: int = 120,
+                    ):
+        """
+        :param outliers: 异常值处理
+        :param neu: 中心化处理
+        :param stand: 标准化处理
+        :param switch_freq: 数据频率的转换
+        :param limit: 数据填充长度
+        :return:
+        """
         # Integration
         SP, LP = self.data_input.get("StockPool", None), self.data_input.get('LabelPool', None)
 
-        FP = self.factor_dict_clean[self.fact_name]
+        FP = self.factor_dict[self.fact_name].data.copy(deep=True)
+        # 数据频率的转换
+        if switch_freq:
+            FP = FactorBase()._switch_freq(data_=FP, name=self.fact_name, limit=limit)
 
         #  Label Pool and Factor Pool intersection with Stock Pool, respectively
         self.Finally_data["Strategy"] = pd.concat([FP.reindex(SP), LP], axis=1)
+
+        # process factor
+        self.process_factor(data=self.Finally_data["Strategy"][self.fact_name],
+                            outliers=outliers,
+                            neutralization=neu,
+                            standardization=stand)
+
+        self.Finally_data["Strategy"][self.fact_name] = self.factor_dict_clean[self.fact_name]
+
         self.Finally_data["Strategy"].dropna(how='all', inplace=True)
 
         # get benchmark
@@ -329,12 +350,11 @@ class FactorValidityCheck(object):
 
         data_clean = self.Finally_data["Strategy"].copy(deep=True)
 
-        # data_clean = data_clean[data_clean['HS300'] == 1]
         fact_exposure = copy.deepcopy(data_clean[self.fact_name])
         stock_return = copy.deepcopy(data_clean[PVN.STOCK_RETURN.value + '_' + ret_name])
         stock_return.name = PVN.STOCK_RETURN.value
         industry_exposure = copy.deepcopy(data_clean[SN.INDUSTRY_FLAG.value])
-        hs300_weight = copy.deepcopy(data_clean[SN.CSI_300_INDUSTRY_WEIGHT.value])
+        index_weight = copy.deepcopy(data_clean[SN.CSI_500_INDUSTRY_WEIGHT.value])
         # benchmark = self.Finally_data['BenchMark'].copy(deep=True)
         liq_mv = data_clean[PVN.LIQ_MV.value].copy(deep=True)
 
@@ -356,7 +376,7 @@ class FactorValidityCheck(object):
                                      stock_return=stock_return,
                                      # benchmark=benchmark,
                                      industry_exposure=industry_exposure,
-                                     hs300_weight=hs300_weight,
+                                     index_weight=index_weight,
                                      ret_period=ret_period,
                                      group_num=group_num,
                                      save=save)
@@ -364,8 +384,8 @@ class FactorValidityCheck(object):
             print(e)
         else:
             if eff1 is not None and eff2 is not None:
-                self.to_csv(FPN.factor_ef.value, 'Correlation', eff1.append(eff2))
-                self.to_csv(FPN.factor_ef.value, 'Group', eff3)
+                self.to_csv(FPN.factor_test_res.value, 'Correlation', eff1.append(eff2))
+                self.to_csv(FPN.factor_test_res.value, 'Group', eff3)
 
     # 单因子与下期收益率回归
     def factor_return(self,
@@ -392,9 +412,9 @@ class FactorValidityCheck(object):
         df_data = pd.concat([return_label, industry_exposure, fact_exposure, mv],
                             axis=1,
                             join='inner').sort_index()
-        # Analytic regression result：T Value and Factor Return
 
-        res_reg = df_data.groupby(KN.TRADE_DATE.value).apply(self._reg_fact_return, 1500)
+        # Analytic regression result：T Value and Factor Return
+        res_reg = df_data.groupby(KN.TRADE_DATE.value).apply(self._reg_fact_return, 150)
         res_reg.dropna(how='all', inplace=True)
         if res_reg.empty:
             print(f"{self.fact_name}因子每期有效样本量不足1500，无法检验！")
@@ -423,11 +443,11 @@ class FactorValidityCheck(object):
         self.plot_return(fact_ret=res_reg['factor_return'][test_reg], ret_period=ret_period, save=kwargs['save'])
 
         # save data to dict
-        # self.fact_test_result[self.fact_name]['reg'] = {"res": res_reg,
-        #                                                 "ind": test_indicators}
+        self.fact_test_result[self.fact_name]['reg'] = {"res": res_reg,
+                                                        "ind": test_indicators}
         # save result to local
-        if kwargs['save']:
-            self.factor_return_to_sql(fact_ret=res_reg, ret_type='Pearson', ret_period=ret_period)
+        # if kwargs['save']:
+        #     self.factor_return_to_sql(fact_ret=res_reg, ret_type='Pearson', ret_period=ret_period)
 
         return test_indicators
 
@@ -468,8 +488,8 @@ class FactorValidityCheck(object):
                      save=kwargs['save'])
 
         # save result to local
-        if kwargs['save']:
-            self.factor_return_to_sql(fact_ret=IC.to_frame('factor_return'), ret_type='Spearman', ret_period=ret_period)
+        # if kwargs['save']:
+        #     self.factor_return_to_sql(fact_ret=IC.to_frame('factor_return'), ret_type='Spearman', ret_period=ret_period)
 
         return test_indicators
 
@@ -479,7 +499,7 @@ class FactorValidityCheck(object):
                      stock_return: pd.Series,
                      # benchmark: pd.Series,
                      industry_exposure: pd.DataFrame,
-                     hs300_weight: pd.Series,
+                     index_weight: pd.Series,
                      ret_period: int = 1,
                      group_num: int = 5,
                      **kwargs):
@@ -488,14 +508,14 @@ class FactorValidityCheck(object):
         :param fact_exposure:
         :param stock_return:
         :param industry_exposure:
-        :param hs300_weight:
+        :param index_weight:
         :param ret_period:
         :param group_num: 分组数量
         :return:
         """
 
         # Grouping
-        df_data = pd.concat([stock_return, fact_exposure, industry_exposure, hs300_weight],
+        df_data = pd.concat([stock_return, fact_exposure, industry_exposure, index_weight],
                             axis=1,
                             join='inner').dropna(how='any').sort_index()
 
@@ -511,7 +531,7 @@ class FactorValidityCheck(object):
         # bm_nav.name = 'ALL'
 
         # 计算平均组收益
-        df_group_ret = self.group_return(df_data, ret_period=ret_period)
+        df_group_ret = self.group_return(df_data, ret_period=ret_period, index_weight_name=index_weight.name)
         ################################################################################################################
         # 合成净值曲线
         nav = df_group_ret.add(1).cumprod(axis=0)
@@ -536,8 +556,8 @@ class FactorValidityCheck(object):
                                save=kwargs['save'])
 
         # save data to MySQL
-        if kwargs['save']:
-            self.monotonicity_to_sql(df_group_ret=df_group_ret, df_data=df_data, ret_period=ret_period)
+        # if kwargs['save']:
+        #     self.monotonicity_to_sql(df_group_ret=df_group_ret, df_data=df_data, ret_period=ret_period)
 
         return ind_nav
 
@@ -621,7 +641,7 @@ class FactorValidityCheck(object):
 
     # 因子值入库
     @timer
-    def factor_to_sql(self, db_name: str):
+    def factor_to_sql(self, db_name: str, folder_name: str = '', save_type: str = 'raw'):
         def encapsulation(fac: FactorInfo) -> Iterable:
             data_sub = fac.data_raw.where(fac.data_raw.notnull(), None)
             i = 1
@@ -649,7 +669,15 @@ class FactorValidityCheck(object):
 
         # if factor.data_raw.shape[0] >= 1e6:
         #     print("数据量太大，请从本地导入，数据将以CSV形式存储！")
-        df_ = copy.deepcopy(factor.data)  # df_ = copy.deepcopy(factor.data_raw)
+        if save_type == 'raw':
+            df_ = copy.deepcopy(factor.data_raw)  # df_ = copy.deepcopy(factor.data_raw)
+            path_ = FPN.FactorRawData.value
+        elif save_type == 'switch':
+            df_ = copy.deepcopy(factor.data)
+            path_ = FPN.FactorSwitchFreqData.value
+        else:
+            print("factor_type error!}")
+            return
         # df_['factor_category'] = factor.factor_category
         # df_['factor_name'] = factor.factor_name
         # df_['factor_type'] = factor.factor_type
@@ -657,7 +685,10 @@ class FactorValidityCheck(object):
         # df_.rename(columns={self.fact_name: 'factor_value',
         #                     SN.REPORT_DATE.value: 'date_report'},
         #            inplace=True)
-        df_.to_csv(os.path.join(FPN.factor_raw_data.value, f'{self.fact_name}.csv'))
+        file_path = os.path.join(path_, folder_name)
+        if not os.path.exists(file_path):
+            os.makedirs(file_path)
+        df_.to_csv(os.path.join(file_path, f'{self.fact_name}.csv'))
 
         return
 
@@ -671,6 +702,7 @@ class FactorValidityCheck(object):
 
     """画图"""
 
+    # 因子收益累积曲线图
     def plot_return(self, **kwargs):
         fact_ret, ret_period = kwargs['fact_ret'], kwargs['ret_period']
         cum_return = fact_ret.fillna(0).cumsum()
@@ -694,13 +726,13 @@ class FactorValidityCheck(object):
 
         if kwargs['save']:
             # print(f"{dt.datetime.now().strftime('%X')}: Save Cum Return result figure")
-            plt.savefig(os.path.join(FPN.factor_ef.value, f"{self.fact_name}_cum_return-{ret_period}days.png"),
+            plt.savefig(os.path.join(FPN.factor_test_res.value, f"{self.fact_name}_cum_return-{ret_period}days.png"),
                         dpi=200,
                         bbox_inches='tight')
 
         plt.show()
 
-    #
+    # 因子与个股收益秩相关系数累积图
     def plot_IC(self, **kwargs):
         IC, IC_cum, ret_period = kwargs['IC'], kwargs['IC_cum'], kwargs['ret_period']
 
@@ -724,13 +756,13 @@ class FactorValidityCheck(object):
         # save IC result figure
         if kwargs['save']:
             # print(f"{dt.datetime.now().strftime('%X')}: Save IC result figure")
-            plt.savefig(os.path.join(FPN.factor_ef.value, f"{self.fact_name}_IC_Value-{ret_period}days.png"),
+            plt.savefig(os.path.join(FPN.factor_test_res.value, f"{self.fact_name}_IC_Value-{ret_period}days.png"),
                         dpi=200,
                         bbox_inches='tight')
 
         plt.show()
 
-    #
+    # 分层结果
     def plot_monotonicity(self, **kwargs):
         nav, ex_nav, ind_year, ret_period = kwargs['nav'], kwargs['ex_nav'], kwargs['ind_year'], kwargs['ret_period']
 
@@ -782,7 +814,7 @@ class FactorValidityCheck(object):
         # save nav result figure
         if kwargs['save']:
             # print(f"{dt.datetime.now().strftime('%X')}: Save nav result figure")
-            plt.savefig(os.path.join(FPN.factor_ef.value, f"{self.fact_name}_nav-{ret_period}days.png"),
+            plt.savefig(os.path.join(FPN.factor_test_res.value, f"{self.fact_name}_nav-{ret_period}days.png"),
                         dpi=300,
                         bbox_inches='tight')
         plt.show()
@@ -809,7 +841,7 @@ class FactorValidityCheck(object):
 
         data_df.to_csv(data_path_, mode='a', header=header)
 
-    def _reg_fact_return(self, data_: pd.DataFrame, num: int = 1500) -> object or None:  # TODO 考虑回归失败
+    def _reg_fact_return(self, data_: pd.DataFrame, num: int = 150) -> object or None:  # TODO 考虑回归失败
         """
         需要考虑个股收益波动较大带来的问题，对收益率进行去极值，极端值对最小二乘法影响较大，去除极值会使得回归系数相对平稳点
         返回回归类
@@ -897,10 +929,12 @@ class FactorValidityCheck(object):
     # 考虑路径依赖，多路径取平均
     def group_return(self,
                      data: pd.DataFrame,
-                     ret_period: int = 1) -> pd.DataFrame:
+                     ret_period: int = 1,
+                     index_weight_name: str = SN.CSI_300_INDUSTRY_WEIGHT.value) -> pd.DataFrame:
         """
         :param data:
         :param ret_period:
+        :param index_weight_name:
         :return:
         """
         group_ = data[SN.GROUP.value].unstack().sort_index()
@@ -936,7 +970,7 @@ class FactorValidityCheck(object):
             ind_weight = data_.groupby([KN.TRADE_DATE.value, SN.INDUSTRY_FLAG.value, SN.GROUP.value]).mean()
 
             ind_weight['return_weight'] = ind_weight[PVN.STOCK_RETURN.value] * \
-                                          ind_weight[SN.CSI_300_INDUSTRY_WEIGHT.value]
+                                          ind_weight[index_weight_name]
 
             group_return = ind_weight.groupby([KN.TRADE_DATE.value, SN.GROUP.value]).sum()
 
@@ -973,3 +1007,173 @@ class FactorValidityCheck(object):
         res_ = reduce(lambda x, y: x + y, res_cont_).div(ret_period).unstack().fillna(0)
 
         return res_
+
+
+# 多因子相关性分析
+class FactorCollinearity(object):
+    """
+    目前只考虑线性相关性
+
+    多因子模型中，按照因子的属性类别，将因子划分为大类内因子和大类间因子，
+    一般认为大类内因子具有相同的属性，对个股收益有着相似的解释，
+    大类间因子具有不同的因子属性和意义，对个股收益解释不同，
+    所以基于此：
+    1.大类内因子考虑采用合成的方式对相关性强的因子进行复合
+        复合方式：等权法，
+                 历史收益率加权法（等权，半衰加权），
+                 历史信息比率加权法（等权，半衰加权），
+                 最大化复合IC/IC_IR加权，主成分分析等
+    2.大类间相关性强的因子考虑采用取舍，剔除相关性强的因子
+    注：
+    1.对于符号相反的因子采用复合方式合成新因子时，需要调整因子的符号使因子的符号保持一致
+    2.采用历史收益率或IC对因子进行加权时，默认情况下认为所有交易日都存在，可考虑对因子和权重进行日期重塑，避免数据错位
+    3.在进行因子标准化处理时默认采用多个因子取交集的方式，剔除掉因子值缺失的部分
+    """
+
+    parent_path = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+
+    def __init__(self):
+        self.db = database_manager
+        self.Q = SQL()
+
+        self.fp = FactorProcess()  # 因子预处理
+        self.Multi = Multicollinearity()  # 多因子处理
+
+        self.factors_raw = None  # 原始因子集
+
+        self.factor_D = {}  # 因子符号集
+        self.factor_direction()
+
+    # factor direction mapping  TODO 后续改成时间序列，方便不同时期的因子合成
+    def factor_direction(self, file_name: str = 'factor_direction.json'):
+        try:
+            file_path = os.path.join(self.parent_path, file_name)
+            infile = open(file_path, 'r', encoding='utf-8')
+            self.factor_D = json.load(infile)
+        except Exception as e:
+            print(f"read json file failed, error:{e}")
+            self.factor_D = {}
+
+    # 获取因子数据
+    def get_data(self,
+                 folder_name: str,
+                 factor_names: list,
+                 factors_df: pd.DataFrame = None):
+
+        """
+        数据来源：
+        1.外界输入；
+        2.路劲下读取csv
+        :param factor_names:
+        :param folder_name:
+        :param factors_df:
+        :return:
+        """
+        if factors_df is None:
+            try:
+                factors_path = os.path.join(FPN.factor_ef.value, folder_name)
+                if factor_names:
+                    factor_name_list = list(map(lambda x: x + '.csv', factor_names))
+                else:
+                    factor_name_list = os.listdir(factors_path)
+            except FileNotFoundError:
+                print(f"Path error, no folder name {folder_name} in {FPN.factor_ef.value}!")
+            else:
+                factor_container = []
+                # 目前只考虑csv文件格式
+                for factor_name in factor_name_list:
+                    if factor_name[-3:] != 'csv':
+                        continue
+                    data_path = os.path.join(factors_path, factor_name)
+                    factor_data = pd.read_csv(data_path, index_col=[KN.TRADE_DATE.value, KN.STOCK_ID.value])
+                    factor_container.append(factor_data[factor_name[:-4]])
+
+                if not factor_container:
+                    print(f"No factor data in folder {folder_name}!")
+                else:
+                    self.factors_raw = pd.concat(factor_container, axis=1)
+        else:
+            self.factors_raw = factors_df.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value])
+
+    #  因子合成
+    def factor_synthetic(self,
+                         method: str = 'Equal',
+                         factor_D: dict = None,
+                         stand_method: str = 'z_score',
+                         ret_type: str = 'Pearson',
+                         **kwargs):
+        """
+        因子复合需要考虑不同因子在不同的截面数据缺失情况，对于当期存在缺失因子时，复合因子取有效因子进行加权，而不是剔除
+        :param method:
+        :param factor_D:
+        :param stand_method:
+        :param ret_type:
+        :param kwargs:
+        :return:
+        """
+        # 更新因子符号
+        if factor_D is not None:
+            self.factor_D.update(factor_D)
+
+        # 相关性检验
+        COR = self.Multi.correlation(self.factors_raw)
+
+        # 全量处理，滚动处理后续再补
+        if method != 'Equal':
+            if kwargs.get('fact_ret', None) is None:
+                factor_name_tuple = tuple(self.factors_raw.columns)
+                fact_ret = self.factor_ret_from_sql(factor_name_tuple, hp=kwargs['hp'], ret_type=ret_type)
+            else:
+                factor_name_tuple = tuple(kwargs['fact_ret'].columns)
+                fact_ret = kwargs['fact_ret']
+
+            if len(fact_ret['factor_name'].drop_duplicates()) < len(factor_name_tuple):
+                print(f"因子{ret_type}收益数据缺失，无法进行计算")
+                return
+
+            kwargs['fact_ret'] = fact_ret.pivot_table(values='factor_return',
+                                                      index=KN.TRADE_DATE.value,
+                                                      columns='factor_name')
+            # 交易日修正
+            td = self.Q.query(self.Q.trade_date_SQL(date_sta=kwargs['fact_ret'].index[0].replace('-', ''),
+                                                    date_end=kwargs['fact_ret'].index[-1].replace('-', '')))
+            kwargs['fact_ret'] = kwargs['fact_ret'].reindex(td['date'])
+
+        factor_copy = self.factors_raw.copy(deep=True)
+        # 因子符号修改
+        for fact_ in factor_copy.columns:
+            if self.factor_D[fact_] == '-':
+                factor_copy[fact_] = - factor_copy[fact_]
+            elif self.factor_D[fact_] == '+':
+                pass
+            else:
+                print(f"{fact_}因子符号有误！")
+                return
+
+        # 对因子进行标准化处理
+
+        factor_copy = factor_copy.apply(self.fp.standardization, args=(stand_method, ))
+
+        comp_factor = self.Multi.composite(factor=factor_copy,
+                                           method=method,
+                                           **kwargs)
+
+        return comp_factor
+
+    def factor_ret_from_sql(self,
+                            factor_name: tuple,
+                            sta_date: str = '2013-01-01',
+                            end_date: str = '2020-04-01',
+                            ret_type: str = 'Pearson',
+                            hp: int = 1):
+
+        fact_ret_sql = self.db.query_factor_ret_data(factor_name=factor_name,
+                                                     sta_date=sta_date,
+                                                     end_date=end_date,
+                                                     ret_type=ret_type,
+                                                     hp=hp)
+        return fact_ret_sql
+
+
+if __name__ == '__main__':
+    W = FactorCollinearity()

@@ -24,9 +24,19 @@ class BaseDatabaseManager(ABC):
     def query_factor_data(
             self,
             factor_name: str,
-            db_name: str):
+            db_name: str,
+            **kwargs):
         pass
 
+    @abstractmethod
+    def query_factor_ret_data(
+            self,
+            factor_name: tuple,
+            sta_date: str,
+            end_date: str,
+            ret_type: str,
+            hp: int):
+        pass
 
     @abstractmethod
     def save_group_data(
