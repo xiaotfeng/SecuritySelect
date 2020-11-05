@@ -8,7 +8,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Iterable
 
 if TYPE_CHECKING:
-    from SecuritySelect.Object import GroupData, FactorData, FactorRetData
+    from Object import GroupData, FactorData, FactorRetData
 
 
 class Driver(Enum):

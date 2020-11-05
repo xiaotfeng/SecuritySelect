@@ -9,9 +9,9 @@ import os
 import sys
 import copy
 
-from ReadFile.GetData import SQL
-from SecuritySelect.Object import FactorInfo
-from SecuritySelect.constant import (
+from Data.GetData import SQL
+from Object import FactorInfo
+from constant import (
     KeyName as KN,
     SpecialName as SN,
     FilePathName as FPN,

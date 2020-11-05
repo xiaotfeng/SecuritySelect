@@ -4,9 +4,8 @@ import os
 import datetime as dt
 import time
 import sys
-
-from ReadFile.GetData import SQL
-from SecuritySelect.constant import (
+from Data.GetData import SQL
+from constant import (
     KeyName as KN,
     PriceVolumeName as PVN,
     FilePathName as FPN,
@@ -188,13 +187,13 @@ class LabelPool(object):
 
 
 if __name__ == '__main__':
-    df_index = pd.read_csv(r"A:\数据\LabelPool\IndexStockWeight.csv")
-    df_industry = pd.read_csv(r"A:\数据\LabelPool\IndustryLabel.csv")
-    df_mv = pd.read_csv(r"A:\数据\LabelPool\MV.csv")
-
-    df_industry.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)
-    df_index.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)
-    df_mv.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)
+    # df_index = pd.read_csv(r"A:\数据\LabelPool\IndexStockWeight.csv")
+    # df_industry = pd.read_csv(r"A:\数据\LabelPool\IndustryLabel.csv")
+    # df_mv = pd.read_csv(r"A:\数据\LabelPool\MV.csv")
+    #
+    # df_industry.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)
+    # df_index.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)
+    # df_mv.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)
 
     A = LabelPool()
     op = A.industry_mv(df_index, df_industry, df_mv)

@@ -6,9 +6,9 @@ import pandas as pd
 import numpy as np
 import sys
 
-from SecuritySelect.FactorCalculation.FactorBase import FactorBase
-from SecuritySelect.Object import FactorInfo
-from SecuritySelect.constant import (
+from FactorCalculation.FactorBase import FactorBase
+from Object import FactorInfo
+from constant import (
     KeyName as KN,
     PriceVolumeName as PVN,
     SpecialName as SN,
@@ -523,6 +523,70 @@ class FinancialValuationFactor(FactorBase):
                         sta: int = 20130101,
                         end: int = 20200401,
                         f_type: str = '408001000'):
+        sql_keys = {"BST": {"TOT_SHRHLDR_EQY_EXCL_MIN_INT": f"\"{FBSN.Net_Asset_Ex.value}\""}
+                    }
+
+        sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
+        financial_data = cls().Q.query(sql_)
+        price_data = cls()._csv_data([PVN.TOTAL_MV.value])
+
+        # 过滤未上市公司
+        data_ = pd.merge(financial_data, cls().list_date, on=[KN.STOCK_ID.value], how='left')
+        financial_data = data_[data_[KN.TRADE_DATE.value] >= data_[KN.LIST_DATE.value]]
+
+        # TTM
+        financial_ttm = cls()._switch_ttm(financial_data, FBSN.Net_Asset_Ex.value)
+        financial_data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        financial_data[FBSN.Net_Asset_Ex.value] = financial_ttm
+
+        # switch freq
+        financial_data = cls()._switch_freq(data_=financial_data, name=FBSN.Net_Asset_Ex.value, limit=120)
+
+        price_data.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)
+
+        # 数据合并
+        res = pd.concat([financial_data, price_data], axis=1, join='inner')
+        res.reset_index(inplace=True)
+
+        return res
+
+    @classmethod  # TODO
+    def REP_data_raw(cls,
+                     sta: int = 20130101,
+                     end: int = 20200401,
+                     f_type: str = '408001000'):
+        sql_keys = {"BST": {"TOT_SHRHLDR_EQY_EXCL_MIN_INT": f"\"{FBSN.Net_Asset_Ex.value}\""}
+                    }
+
+        sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
+        financial_data = cls().Q.query(sql_)
+        price_data = cls()._csv_data([PVN.TOTAL_MV.value])
+
+        # 过滤未上市公司
+        data_ = pd.merge(financial_data, cls().list_date, on=[KN.STOCK_ID.value], how='left')
+        financial_data = data_[data_[KN.TRADE_DATE.value] >= data_[KN.LIST_DATE.value]]
+
+        # TTM
+        financial_ttm = cls()._switch_ttm(financial_data, FBSN.Net_Asset_Ex.value)
+        financial_data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        financial_data[FBSN.Net_Asset_Ex.value] = financial_ttm
+
+        # switch freq
+        financial_data = cls()._switch_freq(data_=financial_data, name=FBSN.Net_Asset_Ex.value, limit=120)
+
+        price_data.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)
+
+        # 数据合并
+        res = pd.concat([financial_data, price_data], axis=1, join='inner')
+        res.reset_index(inplace=True)
+
+        return res
+
+    @classmethod  # TODO
+    def CCP_data_raw(cls,
+                     sta: int = 20130101,
+                     end: int = 20200401,
+                     f_type: str = '408001000'):
         sql_keys = {"BST": {"TOT_SHRHLDR_EQY_EXCL_MIN_INT": f"\"{FBSN.Net_Asset_Ex.value}\""}
                     }
 

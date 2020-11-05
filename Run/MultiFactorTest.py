@@ -7,7 +7,7 @@ import pandas as pd
 import time
 import yagmail
 from multiprocessing import Pool
-from SecuritySelect.FactorAnalysis.FactorAnalysis import *
+from FactorAnalysis.FactorAnalysis import *
 
 DATABASE_NAME = {"Group": "分组数据保存",
                  "Fin": "基本面因子保存",
@@ -100,7 +100,7 @@ if __name__ == '__main__':
     while True:
         if True:
         # if dt.datetime.now() > dt.datetime(2020, 10, 22, 7, 30) and s == 0:#  dt.datetime.now() > dt.datetime(2020, 10, 22, 7, 30)
-            # send_email(email, "开始进行因子有效性检验", f'{dt.datetime.now()}')
+            send_email(email, "开始进行因子有效性检验", f'{dt.datetime.now()}')
             for fact_c, fact_names in factors_name.items():
                 fact_dict = {}
                 for fact_name in fact_names:

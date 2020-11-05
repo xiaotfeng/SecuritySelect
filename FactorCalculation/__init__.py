@@ -29,7 +29,7 @@ class FactorPool(object):
                 if filename.startswith('__'):
                     continue
                 class_name = filename[:-3]
-                module = importlib.import_module("SecuritySelect.FactorCalculation." + class_name)
+                module = importlib.import_module("FactorCalculation." + class_name)
                 for class_name in dir(module):
                     value = getattr(module, class_name)
                     if isinstance(value, type):

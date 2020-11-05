@@ -7,9 +7,9 @@ import pandas as pd
 import numpy as np
 import sys
 
-from SecuritySelect.FactorCalculation.FactorBase import FactorBase
-from SecuritySelect.Object import FactorInfo
-from SecuritySelect.constant import (
+from FactorCalculation.FactorBase import FactorBase
+from Object import FactorInfo
+from constant import (
     KeyName as KN,
     SpecialName as SN,
     FinancialBalanceSheetName as FBSN,

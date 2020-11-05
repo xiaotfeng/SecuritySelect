@@ -6,7 +6,7 @@ import sys
 import time
 from functools import reduce
 
-from SecuritySelect.constant import (
+from constant import (
     KeyName as KN,
     FilePathName as FPN,
     PriceVolumeName as PVN,

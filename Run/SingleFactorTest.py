@@ -8,7 +8,7 @@ import pandas as pd
 import time
 import yagmail
 from multiprocessing import Pool
-from SecuritySelect.FactorAnalysis.FactorAnalysis import *
+from FactorAnalysis.FactorAnalysis import *
 
 DATABASE_NAME = {"Group": "分组数据保存",
                  "Fin": "基本面因子保存",
@@ -47,38 +47,35 @@ def Single_factor_test(params: dict,
 
 
 def main1():
-    factor_name = 'Alpha_501'  # ROA_G_ttm
-    for i in [1, 2, 3, 4, 5, 6]:
-        df = pd.read_csv(r"C:\Users\Administrator\Desktop\test\ValuationFactorsData_Neutralized_HT.csv")
-        df_ = df[['tradeDate', 'stockCode', 'Alpha_501']]
-        df_.columns = ['date', 'stock_id', 'Alpha_501']
+    # factor_name = 'Alpha_501'  # ROA_G_ttm
+    for i in ["EP_LR", "ROE_Q_avg_deducted", "ROA_Q_avg","Sales_G_Q_LR", "EPS_G_TTM", "currentdebttodebt"]:
+        df = pd.read_csv(f"A:\\数据\\{i}.csv")
 
-        fact_value = df_
         # df_.set_index(['date', 'stock_id'], inplace=True)
         # fact_value = pd.read_csv(f'A:\\数据\\FactorPool\\Factor_Effective\\CompFactor\\{factor_name}.csv')
         # fact_value = pd.read_csv(f'{FPN.factor_raw_data.value}{factor_category}\\{factor_name}.csv')
-        factor_p = {"factor_name": factor_name,
+        factor_p = {"fact_name": i,
                     "factor_params": {"switch": False},
                     'db': 'Fin',
-                    'factor_value': fact_value,
+                    'factor_value': df,
                     'cal': False}
-        factor_process = {"outliers": '',  # mad
-                          "neu": '',  # mv+industry
+        factor_process = {"outliers": 'mad',  # mad
+                          "neu": 'mv+industry',  # mv+industry
                           "stand": 'mv',  # mv
                           "switch_freq": False,
                           "limit": 120}
 
-        print(f"\033[1;31m{dt.datetime.now().strftime('%X')}: {factor_name}\033[0m")
+        print(f"\033[1;31m{dt.datetime.now().strftime('%X')}: {i}\033[0m")
 
         Single_factor_test(params=factor_p,
                            process=factor_process,
-                           hp=i,
+                           hp=20,
                            save=False)
     pass
 
 
 def main2():
-    factor_name = 'MAR_G'  # ROA_G_ttm
+    factor_name = 'ROA_ttm_T'  # ROA_G_ttm
 
     fact_value = None
 
@@ -99,8 +96,8 @@ def main2():
     Single_factor_test(params=factor_p,
                        process=factor_process,
                        hp=6,
-                       save=False)
+                       save=True)
 
 
 if __name__ == '__main__':
-    main2()
+    main1()

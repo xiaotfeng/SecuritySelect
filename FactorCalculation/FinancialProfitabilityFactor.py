@@ -7,9 +7,9 @@ import pandas as pd
 import numpy as np
 import sys
 
-from SecuritySelect.FactorCalculation.FactorBase import FactorBase
-from SecuritySelect.Object import FactorInfo
-from SecuritySelect.constant import (
+from FactorCalculation.FactorBase import FactorBase
+from Object import FactorInfo
+from constant import (
     KeyName as KN,
     SpecialName as SN,
     FinancialBalanceSheetName as FBSN,
@@ -35,6 +35,46 @@ class FinancialProfitabilityFactor(FactorBase):
 
         data[func_name] = data[net_profit_in] / data[total_asset]
         data[func_name][np.isinf(data[func_name])] = np.nan
+
+        if switch:
+            data_fact = cls()._switch_freq(data_=data, name=func_name)
+        else:
+            data_fact = None
+
+        data.reset_index(inplace=True)
+
+        F = FactorInfo()
+        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
+        F.data = data_fact
+        F.factor_type = data['type'][0]
+        F.factor_category = cls().__class__.__name__
+        F.factor_name = func_name
+
+        return F
+
+    @classmethod
+    def ROA_ttm_T(cls,
+                  data: pd.DataFrame,
+                  net_profit_in: str = FISN.Net_Pro_In.value,
+                  total_asset: str = FBSN.Total_Asset.value,
+                  switch: bool = False):
+        """
+        单季度ROA（同比）
+        :param data:
+        :param net_profit_in:
+        :param total_asset:
+        :param switch:
+        :return:
+        """
+        func_name = sys._getframe().f_code.co_name
+        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        data.sort_index(inplace=True)
+
+        data['ROA_Q'] = data.groupby(KN.STOCK_ID.value,
+                                     group_keys=False).apply(
+            lambda x: x[net_profit_in].diff(1) / x[total_asset].shift(1))
+        data['ROA_Q'][np.isinf(data['ROA_Q'])] = np.nan
+        data[func_name] = data['ROA_Q'].groupby(KN.STOCK_ID.value).diff(1)
 
         if switch:
             data_fact = cls()._switch_freq(data_=data, name=func_name)
@@ -237,6 +277,45 @@ class FinancialProfitabilityFactor(FactorBase):
 
         return F
 
+    @classmethod
+    def NPM_T(cls,
+              data: pd.DataFrame,
+              net_profit_in: str = FISN.Net_Pro_In.value,
+              operator_income: str = FISN.Op_Income.value,
+              switch: bool = False):
+        """
+        净利润率(同比) = 本期净利润 / 本期主营业务收入 - 上期净利润 / 上期主营业务收入
+        :param data:
+        :param net_profit_in:
+        :param operator_income:
+        :param switch:
+        :return:
+        """
+
+        func_name = sys._getframe().f_code.co_name
+        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        data.sort_index(inplace=True)
+
+        data['NP'] = data[net_profit_in] / data[operator_income]
+        data[np.isinf(data['NP'])] = 0
+        data[func_name] = data['NP'].groupby(KN.STOCK_ID.value).diff(1)
+
+        if switch:
+            data_fact = cls()._switch_freq(data_=data, name=func_name)
+        else:
+            data_fact = None
+
+        data = data.reset_index()
+
+        F = FactorInfo()
+        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
+        F.data = data_fact
+        F.factor_type = data['type'][0]
+        F.factor_category = cls().__class__.__name__
+        F.factor_name = func_name
+
+        return F
+
     ####################################################################################################################
     @classmethod
     def ROA_ttm_data_raw(cls,
@@ -268,6 +347,13 @@ class FinancialProfitabilityFactor(FactorBase):
 
         financial_data.reset_index(inplace=True)
         return financial_data
+
+    @classmethod
+    def ROA_ttm_T_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
+        return cls.ROA_ttm_data_raw(sta=sta, end=end, f_type=f_type)
 
     @classmethod
     def DPR_ttm_data_raw(cls,
@@ -398,3 +484,11 @@ class FinancialProfitabilityFactor(FactorBase):
         financial_data.reset_index(inplace=True)
 
         return financial_data
+
+    @classmethod
+    def NPM_T_data_raw(cls,
+                       sta: int = 20130101,
+                       end: int = 20200401,
+                       f_type: str = '408001000'):
+
+        return cls.NP_ttm_data_raw(sta=sta, end=end, f_type=f_type)

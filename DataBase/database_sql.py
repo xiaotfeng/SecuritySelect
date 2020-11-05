@@ -8,7 +8,7 @@ import pymysql
 import pandas as pd
 import time
 from typing import List, Type, Iterable, Dict
-from SecuritySelect.Object import GroupData, FactorData, FactorRetData
+from Object import GroupData, FactorData, FactorRetData
 from peewee import (
     AutoField,
     CharField,
@@ -22,8 +22,8 @@ from peewee import (
     chunked,
 )
 
-from SecuritySelect.DataBase.database import BaseDatabaseManager, Driver
-from SecuritySelect.constant import (
+from DataBase.database import BaseDatabaseManager, Driver
+from constant import (
     KeyName as KN,
     PriceVolumeName as PVN,
     SpecialName as SN,

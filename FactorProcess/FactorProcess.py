@@ -9,8 +9,8 @@ import datetime as dt
 from sklearn.decomposition import PCA
 from sklearn import linear_model
 
-from SecuritySelect.Optimization import MaxOptModel
-from SecuritySelect.constant import (
+from Optimization import MaxOptModel
+from constant import (
     KeyName as KN,
     PriceVolumeName as PVN,
     FilePathName as FPN,

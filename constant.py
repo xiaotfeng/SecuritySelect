@@ -21,9 +21,10 @@ class FilePathName(Enum):
     factor_inputData = 'A:\\SecuritySelectData\\FactorPool\\Factor_InputData\\'  # 因子计算所需数据
     FactorSwitchFreqData = "A:\\SecuritySelectData\\FactorPool\\FactorSwitchFreqData\\"  # 频率转换后的因子集
     FactorRawData = "A:\\SecuritySelectData\\FactorPool\\FactorRawData\\"  # 原始因子集（未经任何处理）
-    factor_ef = "A:\\SecuritySelectData\\FactorPool\\FactorEffective\\"  # 初步筛选有效因子集
     factor_test_res = "A:\\SecuritySelectData\\FactorPool\\FactorsTestResult\\"  # 因子检验结果保存
-    factor_comp = "A:\\SecuritySelectData\\FactorPool\\FactorComp\\"  # 复合因子数据集
+
+    factor_ef = "A:\\SecuritySelectData\\FactorPool\\FactorEffective\\"  # 筛选有效因子集
+    factor_comp = "A:\\SecuritySelectData\\FactorPool\\FactorEffective\\FactorComp\\"  # 复合因子数据集
 
 
 @unique

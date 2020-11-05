@@ -9,9 +9,9 @@ from pyfinance.ols import PandasRollingOLS
 import warnings
 import time
 
-from SecuritySelect.FactorCalculation.FactorBase import FactorBase
-from SecuritySelect.Object import FactorInfo
-from SecuritySelect.constant import (
+from FactorCalculation.FactorBase import FactorBase
+from Object import FactorInfo
+from constant import (
     KeyName as KN,
     PriceVolumeName as PVN,
     SpecialName as SN

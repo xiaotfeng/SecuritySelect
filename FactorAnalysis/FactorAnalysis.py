@@ -14,25 +14,25 @@ import seaborn as sns
 import copy
 import datetime as dt
 
-from SecuritySelect.DataBase import database_manager
-from SecuritySelect.Object import (
+from DataBase import database_manager
+from Object import (
     FactorInfo,
     GroupData,
     FactorData,
     FactorRetData,
     send_email
 )
-from ReadFile.GetData import SQL
+from Data.GetData import SQL
 
-from SecuritySelect.FactorCalculation import FactorPool
-from SecuritySelect.LabelPool.Labelpool import LabelPool
-from SecuritySelect.StockPool.StockPool import StockPool
+from FactorCalculation import FactorPool
+from LabelPool.Labelpool import LabelPool
+from StockPool.StockPool import StockPool
 
-from SecuritySelect.FactorProcess.FactorProcess import FactorProcess, Multicollinearity
-from SecuritySelect.FactorCalculation.FactorBase import FactorBase
-from SecuritySelect.EvaluationIndicitor.Indicator import Indicator
+from FactorProcess.FactorProcess import FactorProcess, Multicollinearity
+from FactorCalculation.FactorBase import FactorBase
+from EvaluationIndicitor.Indicator import Indicator
 
-from SecuritySelect.constant import (
+from constant import (
     timer,
     KeyName as KN,
     PriceVolumeName as PVN,
@@ -383,7 +383,7 @@ class FactorValidityCheck(object):
         except Exception as e:
             print(e)
         else:
-            if eff1 is not None and eff2 is not None:
+            if eff1 is not None and eff2 is not None and save:
                 self.to_csv(FPN.factor_test_res.value, 'Correlation', eff1.append(eff2))
                 self.to_csv(FPN.factor_test_res.value, 'Group', eff3)
 
@@ -1056,14 +1056,14 @@ class FactorCollinearity(object):
 
     # 获取因子数据
     def get_data(self,
-                 folder_name: str,
-                 factor_names: list,
+                 folder_name: str = '',
+                 factor_names: dict = None,
                  factors_df: pd.DataFrame = None):
 
         """
         数据来源：
         1.外界输入；
-        2.路劲下读取csv
+        2.路径下读取csv
         :param factor_names:
         :param folder_name:
         :param factors_df:
@@ -1071,7 +1071,7 @@ class FactorCollinearity(object):
         """
         if factors_df is None:
             try:
-                factors_path = os.path.join(FPN.factor_ef.value, folder_name)
+                factors_path = os.path.join(FPN.FactorSwitchFreqData.value, folder_name)
                 if factor_names:
                     factor_name_list = list(map(lambda x: x + '.csv', factor_names))
                 else:
@@ -1085,6 +1085,7 @@ class FactorCollinearity(object):
                     if factor_name[-3:] != 'csv':
                         continue
                     data_path = os.path.join(factors_path, factor_name)
+                    print(f"Read factor data:{factor_name[:-4]}")
                     factor_data = pd.read_csv(data_path, index_col=[KN.TRADE_DATE.value, KN.STOCK_ID.value])
                     factor_container.append(factor_data[factor_name[:-4]])
 
@@ -1094,6 +1095,14 @@ class FactorCollinearity(object):
                     self.factors_raw = pd.concat(factor_container, axis=1)
         else:
             self.factors_raw = factors_df.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value])
+
+    # 相关性检验
+
+    def correctionTest(self):
+        COR = self.Multi.correlation(self.factors_raw)
+
+        print('S')
+        pass
 
     #  因子合成
     def factor_synthetic(self,
@@ -1114,9 +1123,6 @@ class FactorCollinearity(object):
         # 更新因子符号
         if factor_D is not None:
             self.factor_D.update(factor_D)
-
-        # 相关性检验
-        COR = self.Multi.correlation(self.factors_raw)
 
         # 全量处理，滚动处理后续再补
         if method != 'Equal':

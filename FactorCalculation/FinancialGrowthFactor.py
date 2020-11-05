@@ -7,9 +7,9 @@ import statsmodels.api as sm
 import numpy as np
 import sys
 
-from SecuritySelect.FactorCalculation.FactorBase import FactorBase
-from SecuritySelect.Object import FactorInfo
-from SecuritySelect.constant import (
+from FactorCalculation.FactorBase import FactorBase
+from Object import FactorInfo
+from constant import (
     KeyName as KN,
     SpecialName as SN,
     FinancialBalanceSheetName as FBSN,
@@ -863,10 +863,45 @@ class FinancialGrowthFactor(FactorBase):
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
 
-        # TODO 重复索引问题
         data[func_name] = data.groupby(KN.STOCK_ID.value,
                                        group_keys=False).apply(
             lambda x: x[net_profit_ex].diff(4) / abs(x[net_profit_ex].shift(4)))
+
+        if switch:
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
+        else:
+            data_fact = None
+
+        data = data.reset_index()
+
+        F = FactorInfo()
+        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
+        F.data = data_fact
+        F.factor_type = data['type'][0]
+        F.factor_category = cls().__class__.__name__
+        F.factor_name = func_name
+
+        return F
+
+    @classmethod
+    def MOper_G(cls,
+                data: pd.DataFrame,
+                operator_income: str = FISN.Op_Income.value,
+                switch: bool = False):
+        """
+        主营业务收入增长率 = （本期主营业务收入 - 去年同期主营业务收入) / ABS(去年同期主营业务收入)
+        :param data:
+        :param operator_income:
+        :param switch:
+        :return:
+        """
+        func_name = sys._getframe().f_code.co_name
+        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        data.sort_index(inplace=True)
+
+        data[func_name] = data.groupby(KN.STOCK_ID.value,
+                                       group_keys=False).apply(
+            lambda x: x[operator_income].diff(4) / abs(x[operator_income].shift(4)))
 
         if switch:
             data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
@@ -1217,6 +1252,30 @@ class FinancialGrowthFactor(FactorBase):
         # 过滤未上市公司
         data_ = pd.merge(financial_data, cls().list_date, on=[KN.STOCK_ID.value], how='left')
         financial_data = data_[data_[KN.TRADE_DATE.value] >= data_[KN.LIST_DATE.value]]
+
+        return financial_data
+
+    @classmethod
+    def MOper_G_data_raw(cls,
+                         sta: int = 20130101,
+                         end: int = 20200401,
+                         f_type: str = '408001000'):
+        sql_keys = {"IST": {"OPER_REV": f"\"{FISN.Op_Income.value}\""}
+                    }
+
+        sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
+        financial_data = cls().Q.query(sql_)
+
+        # 过滤未上市公司
+        data_ = pd.merge(financial_data, cls().list_date, on=[KN.STOCK_ID.value], how='left')
+        financial_data = data_[data_[KN.TRADE_DATE.value] >= data_[KN.LIST_DATE.value]]
+
+        # switch ttm
+        operate_income = cls()._switch_ttm(financial_data, FISN.Op_Income.value)
+
+        financial_data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        financial_data[FISN.Op_Income.value] = operate_income
+        financial_data.reset_index(inplace=True)
 
         return financial_data
 

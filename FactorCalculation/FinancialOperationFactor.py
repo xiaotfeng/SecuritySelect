@@ -8,9 +8,9 @@ import numpy as np
 from pyfinance.ols import PandasRollingOLS
 import sys
 
-from SecuritySelect.FactorCalculation.FactorBase import FactorBase
-from SecuritySelect.Object import FactorInfo
-from SecuritySelect.constant import (
+from FactorCalculation.FactorBase import FactorBase
+from Object import FactorInfo
+from constant import (
     KeyName as KN,
     SpecialName as SN,
     FinancialBalanceSheetName as FBSN,
@@ -136,6 +136,42 @@ class FinancialOperationFactor(FactorBase):
 
         return F
 
+    @classmethod
+    def TA_Turn_ttm_T(cls,
+                      data: pd.DataFrame,
+                      operator_income: str = FISN.Op_Income.value,
+                      total_asset: str = FBSN.Total_Asset.value,
+                      switch: bool = False):
+
+        """
+        总资产周转率（同比） = 本期营业收入 / 本期平均资产总额 - 上期营业收入 / 上期平均资产总额
+        :return:
+        """
+        func_name = sys._getframe().f_code.co_name
+        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        data.sort_index(inplace=True)
+
+        data[total_asset] = data[total_asset].groupby(KN.STOCK_ID.value,
+                                                      group_keys=False).rolling(2, min_periods=1).mean()
+        data["TA_turn_ttm"] = data[operator_income] / data[total_asset]
+        data[func_name] = data["TA_turn_ttm"].groupby(KN.STOCK_ID.value).diff(1)
+
+        if switch:
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
+        else:
+            data_fact = None
+
+        data = data.reset_index()
+
+        F = FactorInfo()
+        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
+        F.data = data_fact
+        F.factor_type = data['type'][0]
+        F.factor_category = cls().__class__.__name__
+        F.factor_name = func_name
+
+        return F
+
     ####################################################################################################################
     @classmethod
     def RROC_N_data_raw(cls,
@@ -198,6 +234,14 @@ class FinancialOperationFactor(FactorBase):
 
         financial_data.reset_index(inplace=True)
         return financial_data
+
+    @classmethod
+    def TA_Turn_ttm_T_data_raw(cls,
+                               sta: int = 20130101,
+                               end: int = 20200401,
+                               f_type: str = '408001000'):
+
+        return cls.TA_Turn_ttm_data_raw(sta=sta, end=end, f_type=f_type)
 
     @staticmethod
     def _reg_rolling(reg_: pd.DataFrame, x_name: str, y_name: str, win: int, has_cons: bool = False):

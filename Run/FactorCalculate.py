@@ -7,7 +7,7 @@ import os
 import pandas as pd
 import time
 from multiprocessing import Pool
-from SecuritySelect.FactorAnalysis.FactorAnalysis import *
+from FactorAnalysis.FactorAnalysis import *
 
 DATABASE_NAME = {"Group": "分组数据保存",
                  "Fin": "基本面因子保存",
@@ -24,11 +24,11 @@ def cal_factor(params_dict: dict, db_name: str):
     factor_params = params_dict['factor_params']
 
     A.load_factor(fact_name=factor_name,
-                  fact_params=factor_params,
+                  factor_params=factor_params,
                   db_name=db_name,
                   cal=params_dict['cal'])
 
-    A.factor_to_sql(db_name, folder_name=factor_category)
+    A.factor_to_sql(db_name, folder_name=factor_category, save_type=params_dict['save_type'])
 
 
 def main():
@@ -71,14 +71,27 @@ def main():
 
 
 def main1():
-    factor = 'MAR_G'
+    factor = 'ROA_ttm_T'
+    factor_category = FCN.Pro.value
     print(f"开始计算{factor}因子")
-    factor_dict = {"factor_category": FCN.Gro.value,
+    factor_dict = {"factor_category": factor_category,
                    "factor_name": factor,
                    "factor_params": {"switch": False},
                    'factor': None,
                    'cal': True,
                    'save_type': 'raw'  # 保存原始因子数据， switch:保留频率转换后的数据
+                   }
+
+    print(f"\033[1;31m{dt.datetime.now().strftime('%X')}: {factor_dict['factor_name']}\033[0m")
+    db = 'Fin'
+    cal_factor(factor_dict, db)
+
+    factor_dict = {"factor_category": factor_category,
+                   "factor_name": factor,
+                   "factor_params": {"switch": True},
+                   'factor': None,
+                   'cal': True,
+                   'save_type': 'switch'  # 保存原始因子数据， switch:保留频率转换后的数据
                    }
 
     print(f"\033[1;31m{dt.datetime.now().strftime('%X')}: {factor_dict['factor_name']}\033[0m")

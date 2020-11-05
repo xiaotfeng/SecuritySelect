@@ -9,8 +9,8 @@ import statsmodels.api as sm
 import time
 from functools import reduce
 
-from SecuritySelect.FactorProcess.FactorProcess import FactorProcess
-from SecuritySelect.constant import (
+from FactorProcess.FactorProcess import FactorProcess
+from constant import (
     KeyName as KN,
     SpecialName as SN,
     PriceVolumeName as PVN,
