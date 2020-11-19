@@ -13,18 +13,22 @@ mem = psutil.virtual_memory()
 
 @unique
 class FilePathName(Enum):
-    stock_pool_path = 'A:\\SecuritySelectData\\StockPool'  # 股票池数据
-    label_pool_path = 'A:\\SecuritySelectData\\LabelPool'  # 标签池数据
-    process_path = 'A:\\SecuritySelectData\\Process'  # 因子预处理所需数据
+    factor_info = 'Z:\\Database\\'  # 因子信息路径
+    stock_pool_path = 'A:\\DataBase\\SecuritySelectData\\StockPool'  # 股票池数据
+    label_pool_path = 'A:\\DataBase\\SecuritySelectData\\LabelPool'  # 标签池数据
+    process_path = 'A:\\DataBase\\SecuritySelectData\\Process'  # 因子预处理所需数据
 
-    factor_pool_path = 'A:\\SecuritySelectData\\FactorPool\\'  # 因子池
-    factor_inputData = 'A:\\SecuritySelectData\\FactorPool\\Factor_InputData\\'  # 因子计算所需数据
-    FactorSwitchFreqData = "A:\\SecuritySelectData\\FactorPool\\FactorSwitchFreqData\\"  # 频率转换后的因子集
-    FactorRawData = "A:\\SecuritySelectData\\FactorPool\\FactorRawData\\"  # 原始因子集（未经任何处理）
-    factor_test_res = "A:\\SecuritySelectData\\FactorPool\\FactorsTestResult\\"  # 因子检验结果保存
+    factor_pool_path = 'A:\\DataBase\\SecuritySelectData\\FactorPool\\'  # 因子池
+    factor_inputData = 'A:\\DataBase\\SecuritySelectData\\FactorPool\\Factor_InputData\\'  # 因子计算所需数据
+    FactorSwitchFreqData = "A:\\DataBase\\SecuritySelectData\\FactorPool\\FactorSwitchFreqData\\"  # 频率转换后的因子集
+    FactorRawData = "A:\\DataBase\\SecuritySelectData\\FactorPool\\FactorRawData\\"  # 原始因子集（未经任何处理）
+    factor_test_res = "A:\\DataBase\\SecuritySelectData\\FactorPool\\FactorsTestResult\\"  # 因子检验结果保存
 
-    factor_ef = "A:\\SecuritySelectData\\FactorPool\\FactorEffective\\"  # 筛选有效因子集
-    factor_comp = "A:\\SecuritySelectData\\FactorPool\\FactorEffective\\FactorComp\\"  # 复合因子数据集
+    factor_ef = "A:\\DataBase\\SecuritySelectData\\FactorPool\\FactorEffective\\"  # 筛选有效因子集
+    factor_comp = "A:\\DataBase\\SecuritySelectData\\FactorPool\\FactorEffective\\FactorComp\\"  # 复合因子数据集
+
+    Trade_Date = 'A:\\DataBase\\TradeDate'  # 交易日
+    List_Date = 'A:\\DataBase\\ListDate'  # 成立日
 
 
 @unique
@@ -32,11 +36,17 @@ class KeyName(Enum):
     STOCK_ID = 'stock_id'
     TRADE_DATE = 'date'
     LIST_DATE = 'list_date'
+    STOCK_RETURN = 'return'
 
 
 @unique
 class SpecialName(Enum):
     GROUP = 'group'
+
+    CSI_300 = 'HS300'
+    CSI_50 = 'SZ50'
+    CSI_500 = 'ZZ500'
+    WI_A = 'Wind_A'
 
     INDUSTRY_FLAG = 'industry_flag'
     CSI_300_INDUSTRY_WEIGHT = 'csi_300_weight'
@@ -52,7 +62,6 @@ class SpecialName(Enum):
 
 @unique
 class PriceVolumeName(Enum):
-    STOCK_RETURN = 'return'
 
     CLOSE = 'close'
     OPEN = 'open'
@@ -95,7 +104,7 @@ class FinancialBalanceSheetName(Enum):
 
     Total_Lia = 'total_liability'  # 总负债
 
-    Actual_Capital = 'actual_capital'
+    Actual_Capital = 'actual_capital'  # 总股本
     Surplus_Reserves = 'surplus_reserves'  # 盈余公积
     Undistributed_Profit = 'undistributed_profit'  # 未分配利润
 
@@ -135,10 +144,12 @@ class FinancialCashFlowSheetName(Enum):
 class FactorCategoryName(Enum):
     Val = 'ValuationFactor'
     Gro = 'GrowthFactors'
-    Pro = 'ProfitabilityFactor'
+    Pro = 'ProfitFactor'
     Sol = 'SolvencyFactor'
-    Ope = 'OperationFactor'
-    EQ = 'EaringQualityFactor'
+    Ope = 'OperateFactor'
+    EQ = 'QualityFactor'
+    Size = 'SizeFactor'
+    MTM = 'MomentumFactor'
 
 
 @unique
@@ -171,12 +182,12 @@ def timer(func):
     return wrapper
 
 
-def memory_cal(func):
-    mem = psutil.virtual_memory()
-    mem_start = mem.used / 1024 / 1024 / 1024
-    f = func()
-    mem_used = mem.used / 1024 / 1024 / 1024 - mem_start
-    return f
+# def memory_cal(func):
+#     mem = psutil.virtual_memory()
+#     mem_start = mem.used / 1024 / 1024 / 1024
+#     f = func()
+#     mem_used = mem.used / 1024 / 1024 / 1024 - mem_start
+#     return f
 
 
 if __name__ == '__main__':

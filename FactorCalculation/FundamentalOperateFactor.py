@@ -20,19 +20,22 @@ from constant import (
 
 
 # 营运能力因子
-class FinancialOperationFactor(FactorBase):
+class FundamentalOperateFactor(FactorBase):
     """408001000: 合并报表； 408006000：母公司报表 """
 
     def __init__(self):
-        super(FinancialOperationFactor, self).__init__()
+        super(FundamentalOperateFactor, self).__init__()
 
     @classmethod
-    def RROC_N(cls,
-               data: pd.DataFrame,
-               operator_income: str = FISN.Op_Income.value,
-               operator_cost: str = FISN.Op_Cost.value,
-               quarter: int = 8,
-               switch: bool = False):
+    def Operate007(cls,
+                   data: pd.DataFrame,
+                   operator_income: str = FISN.Op_Income.value,
+                   operator_cost: str = FISN.Op_Cost.value,
+                   quarter: int = 8,
+                   switch: bool = False):
+        """
+        营业能力改善因子(RROC_N)
+        """
         func_name = sys._getframe().f_code.co_name
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
@@ -65,12 +68,15 @@ class FinancialOperationFactor(FactorBase):
         return F
 
     @classmethod
-    def OCFA(cls,
-             data: pd.DataFrame,
-             fixed_asset: str = FBSN.Fixed_Asset.value,
-             operator_total_cost: str = FISN.Op_Total_Cost.value,
-             quarter: int = 8,
-             switch: bool = False):
+    def Operate009(cls,
+                   data: pd.DataFrame,
+                   fixed_asset: str = FBSN.Fixed_Asset.value,
+                   operator_total_cost: str = FISN.Op_Total_Cost.value,
+                   quarter: int = 8,
+                   switch: bool = False):
+        """
+        产能利用率因子(OCFA)
+        """
 
         func_name = sys._getframe().f_code.co_name
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
@@ -102,14 +108,14 @@ class FinancialOperationFactor(FactorBase):
         return F
 
     @classmethod
-    def TA_Turn_ttm(cls,
-                    data: pd.DataFrame,
-                    operator_income: str = FISN.Op_Income.value,
-                    total_asset: str = FBSN.Total_Asset.value,
-                    switch: bool = False):
+    def Operate006(cls,
+                   data: pd.DataFrame,
+                   operator_income: str = FISN.Op_Income.value,
+                   total_asset: str = FBSN.Total_Asset.value,
+                   switch: bool = False):
 
         """
-        总资产周转率 = 营业收入 / 平均资产总额
+        总资产周转率(TA_Turn_TTM) = 营业收入 / 平均资产总额
         :return:
         """
         func_name = sys._getframe().f_code.co_name
@@ -137,14 +143,14 @@ class FinancialOperationFactor(FactorBase):
         return F
 
     @classmethod
-    def TA_Turn_ttm_T(cls,
-                      data: pd.DataFrame,
-                      operator_income: str = FISN.Op_Income.value,
-                      total_asset: str = FBSN.Total_Asset.value,
-                      switch: bool = False):
+    def Operate010(cls,
+                   data: pd.DataFrame,
+                   operator_income: str = FISN.Op_Income.value,
+                   total_asset: str = FBSN.Total_Asset.value,
+                   switch: bool = False):
 
         """
-        总资产周转率（同比） = 本期营业收入 / 本期平均资产总额 - 上期营业收入 / 上期平均资产总额
+        总资产周转率(同比)(TA_Turn_ttm_T) = 本期营业收入 / 本期平均资产总额 - 上期营业收入 / 上期平均资产总额
         :return:
         """
         func_name = sys._getframe().f_code.co_name
@@ -174,10 +180,10 @@ class FinancialOperationFactor(FactorBase):
 
     ####################################################################################################################
     @classmethod
-    def RROC_N_data_raw(cls,
-                        sta: int = 20130101,
-                        end: int = 20200401,
-                        f_type: str = '408001000'):
+    def Operate007_data_raw(cls,
+                            sta: int = 20130101,
+                            end: int = 20200401,
+                            f_type: str = '408001000'):
         sql_keys = {"IST": {"OPER_REV": f"\"{FISN.Op_Income.value}\"",
                             "LESS_OPER_COST": f"\"{FISN.Op_Cost.value}\""}
                     }
@@ -192,10 +198,10 @@ class FinancialOperationFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def OCFA_data_raw(cls,
-                      sta: int = 20130101,
-                      end: int = 20200401,
-                      f_type: str = '408001000'):
+    def Operate009_data_raw(cls,
+                            sta: int = 20130101,
+                            end: int = 20200401,
+                            f_type: str = '408001000'):
         sql_keys = {"IST": {"TOT_OPER_COST": f"\"{FISN.Op_Total_Cost.value}\""},
                     "BST": {"FIX_ASSETS": f"\"{FBSN.Fixed_Asset.value}\""}
                     }
@@ -210,10 +216,10 @@ class FinancialOperationFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def TA_Turn_ttm_data_raw(cls,
-                             sta: int = 20130101,
-                             end: int = 20200401,
-                             f_type: str = '408001000'):
+    def Operate006_data_raw(cls,
+                            sta: int = 20130101,
+                            end: int = 20200401,
+                            f_type: str = '408001000'):
         sql_keys = {"IST": {"OPER_PROFIT": f"\"{FISN.Op_Income.value}\""},
                     "BST": {"TOT_ASSETS": f"\"{FBSN.Total_Asset.value}\""}
                     }
@@ -236,12 +242,12 @@ class FinancialOperationFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def TA_Turn_ttm_T_data_raw(cls,
-                               sta: int = 20130101,
-                               end: int = 20200401,
-                               f_type: str = '408001000'):
+    def Operate010_data_raw(cls,
+                            sta: int = 20130101,
+                            end: int = 20200401,
+                            f_type: str = '408001000'):
 
-        return cls.TA_Turn_ttm_data_raw(sta=sta, end=end, f_type=f_type)
+        return cls.Operate006_data_raw(sta=sta, end=end, f_type=f_type)
 
     @staticmethod
     def _reg_rolling(reg_: pd.DataFrame, x_name: str, y_name: str, win: int, has_cons: bool = False):

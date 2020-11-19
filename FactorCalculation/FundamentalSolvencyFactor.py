@@ -18,22 +18,22 @@ from constant import (
 
 
 # 偿债能力因子
-class FinancialSolvencyFactor(FactorBase):
+class FundamentalSolvencyFactor(FactorBase):
     """408001000: 合并报表； 408006000：母公司报表 """
 
     def __init__(self):
         super(FinancialSolvencyFactor, self).__init__()
 
     @classmethod
-    def Int_to_Asset(cls,
-                     data: pd.DataFrame,
-                     short_borrow: str = FBSN.ST_Borrow.value,
-                     short_bond_payable: str = FBSN.ST_Bond_Payable.value,
-                     long_borrow: str = FBSN.LT_Borrow.value,
-                     total_asset: str = FBSN.Total_Asset.value,
-                     switch: bool = False):
+    def Solvency006(cls,
+                    data: pd.DataFrame,
+                    short_borrow: str = FBSN.ST_Borrow.value,
+                    short_bond_payable: str = FBSN.ST_Bond_Payable.value,
+                    long_borrow: str = FBSN.LT_Borrow.value,
+                    total_asset: str = FBSN.Total_Asset.value,
+                    switch: bool = False):
         """
-        有息负债 = 短期借款 + 短期应付债券 + 长期借款
+        有息负债(Int_to_Asset) = 短期借款 + 短期应付债券 + 长期借款
         :param data:
         :param short_borrow:
         :param short_bond_payable:
@@ -68,17 +68,17 @@ class FinancialSolvencyFactor(FactorBase):
         return F
 
     @classmethod
-    def ShortDebt1_CFPA(cls,
-                        data: pd.DataFrame,
-                        currency: str = FBSN.Currency.value,
-                        tradable_asset: str = FBSN.Tradable_Asset.value,
-                        op_net_cash_flow: str = FCFSN.Op_Net_CF.value,
-                        short_borrow: str = FBSN.ST_Borrow.value,
-                        short_bond_payable: str = FBSN.ST_Bond_Payable.value,
-                        short_iliq_liability_1y: str = FBSN.ST_IL_LB_1Y.value,
-                        switch: bool = False) -> FactorInfo:
+    def Solvency007(cls,
+                    data: pd.DataFrame,
+                    currency: str = FBSN.Currency.value,
+                    tradable_asset: str = FBSN.Tradable_Asset.value,
+                    op_net_cash_flow: str = FCFSN.Op_Net_CF.value,
+                    short_borrow: str = FBSN.ST_Borrow.value,
+                    short_bond_payable: str = FBSN.ST_Bond_Payable.value,
+                    short_iliq_liability_1y: str = FBSN.ST_IL_LB_1Y.value,
+                    switch: bool = False) -> FactorInfo:
         """
-        短期偿债能力指标1：（现金及现金等价物 + TTM经营性现金流）/短期有息负债
+        短期偿债能力指标1(ShortDebt1_CFPA)：（现金及现金等价物 + TTM经营性现金流）/短期有息负债
         现金及现金等价物 = 货币资金 + 交易性金融资产
         经营性现金流 = 经营性现金流量净额
         短期有息负债 = 短期借款 + 短期应付债券 + 一年内到期的非流动负债
@@ -124,17 +124,17 @@ class FinancialSolvencyFactor(FactorBase):
         return F
 
     @classmethod
-    def ShortDebt1_CFPA_qoq(cls,
-                            data: pd.DataFrame,
-                            currency: str = FBSN.Currency.value,
-                            tradable_asset: str = FBSN.Tradable_Asset.value,
-                            op_net_cash_flow: str = FCFSN.Op_Net_CF.value,
-                            short_borrow: str = FBSN.ST_Borrow.value,
-                            short_bond_payable: str = FBSN.ST_Bond_Payable.value,
-                            short_iliq_liability_1y: str = FBSN.ST_IL_LB_1Y.value,
-                            switch: bool = False) -> FactorInfo:
+    def Solvency010(cls,
+                    data: pd.DataFrame,
+                    currency: str = FBSN.Currency.value,
+                    tradable_asset: str = FBSN.Tradable_Asset.value,
+                    op_net_cash_flow: str = FCFSN.Op_Net_CF.value,
+                    short_borrow: str = FBSN.ST_Borrow.value,
+                    short_bond_payable: str = FBSN.ST_Bond_Payable.value,
+                    short_iliq_liability_1y: str = FBSN.ST_IL_LB_1Y.value,
+                    switch: bool = False) -> FactorInfo:
         """
-        短期偿债能力指标1：（现金及现金等价物 + TTM经营性现金流）/短期有息负债
+        短期偿债能力指标1(ShortDebt1_CFPA_qoq)：（现金及现金等价物 + TTM经营性现金流）/短期有息负债
         现金及现金等价物 = 货币资金 + 交易性金融资产
         经营性现金流 = 经营性现金流量净额
         短期有息负债 = 短期借款 + 短期应付债券 + 一年内到期的非流动负债
@@ -182,17 +182,17 @@ class FinancialSolvencyFactor(FactorBase):
         return F
 
     @classmethod
-    def ShortDebt1_CFPA_qoq_abs(cls,
-                                data: pd.DataFrame,
-                                currency: str = FBSN.Currency.value,
-                                tradable_asset: str = FBSN.Tradable_Asset.value,
-                                op_net_cash_flow: str = FCFSN.Op_Net_CF.value,
-                                short_borrow: str = FBSN.ST_Borrow.value,
-                                short_bond_payable: str = FBSN.ST_Bond_Payable.value,
-                                short_iliq_liability_1y: str = FBSN.ST_IL_LB_1Y.value,
-                                switch: bool = False) -> FactorInfo:
+    def Solvency013(cls,
+                    data: pd.DataFrame,
+                    currency: str = FBSN.Currency.value,
+                    tradable_asset: str = FBSN.Tradable_Asset.value,
+                    op_net_cash_flow: str = FCFSN.Op_Net_CF.value,
+                    short_borrow: str = FBSN.ST_Borrow.value,
+                    short_bond_payable: str = FBSN.ST_Bond_Payable.value,
+                    short_iliq_liability_1y: str = FBSN.ST_IL_LB_1Y.value,
+                    switch: bool = False) -> FactorInfo:
         """
-        短期偿债能力指标1：（现金及现金等价物 + TTM经营性现金流）/短期有息负债
+        短期偿债能力指标1(ShortDebt1_CFPA_qoq_abs)：（现金及现金等价物 + TTM经营性现金流）/短期有息负债
         现金及现金等价物 = 货币资金 + 交易性金融资产
         经营性现金流 = 经营性现金流量净额
         短期有息负债 = 短期借款 + 短期应付债券 + 一年内到期的非流动负债
@@ -239,18 +239,18 @@ class FinancialSolvencyFactor(FactorBase):
         return F
 
     @classmethod
-    def ShortDebt1_CFPA_std(cls,
-                            data: pd.DataFrame,
-                            currency: str = FBSN.Currency.value,
-                            tradable_asset: str = FBSN.Tradable_Asset.value,
-                            op_net_cash_flow: str = FCFSN.Op_Net_CF.value,
-                            short_borrow: str = FBSN.ST_Borrow.value,
-                            short_bond_payable: str = FBSN.ST_Bond_Payable.value,
-                            short_iliq_liability_1y: str = FBSN.ST_IL_LB_1Y.value,
-                            quarter: int = 8,
-                            switch: bool = False) -> FactorInfo:
+    def Solvency016(cls,
+                    data: pd.DataFrame,
+                    currency: str = FBSN.Currency.value,
+                    tradable_asset: str = FBSN.Tradable_Asset.value,
+                    op_net_cash_flow: str = FCFSN.Op_Net_CF.value,
+                    short_borrow: str = FBSN.ST_Borrow.value,
+                    short_bond_payable: str = FBSN.ST_Bond_Payable.value,
+                    short_iliq_liability_1y: str = FBSN.ST_IL_LB_1Y.value,
+                    quarter: int = 8,
+                    switch: bool = False) -> FactorInfo:
         """
-        短期偿债能力指标1：（现金及现金等价物 + TTM经营性现金流）/短期有息负债
+        短期偿债能力指标1(ShortDebt1_CFPA_std)：（现金及现金等价物 + TTM经营性现金流）/短期有息负债
         现金及现金等价物 = 货币资金 + 交易性金融资产
         经营性现金流 = 经营性现金流量净额
         短期有息负债 = 短期借款 + 短期应付债券 + 一年内到期的非流动负债
@@ -298,18 +298,18 @@ class FinancialSolvencyFactor(FactorBase):
         return F
 
     @classmethod
-    def ShortDebt2_CFPA(cls,
-                        data: pd.DataFrame,
-                        total_asset: str = FBSN.Total_Asset.value,
-                        currency: str = FBSN.Currency.value,
-                        tradable_asset: str = FBSN.Tradable_Asset.value,
-                        op_net_cash_flow: str = FCFSN.Op_Net_CF.value,
-                        short_borrow: str = FBSN.ST_Borrow.value,
-                        short_bond_payable: str = FBSN.ST_Bond_Payable.value,
-                        short_iliq_liability_1y: str = FBSN.ST_IL_LB_1Y.value,
-                        switch: bool = False):
+    def Solvency008(cls,
+                    data: pd.DataFrame,
+                    total_asset: str = FBSN.Total_Asset.value,
+                    currency: str = FBSN.Currency.value,
+                    tradable_asset: str = FBSN.Tradable_Asset.value,
+                    op_net_cash_flow: str = FCFSN.Op_Net_CF.value,
+                    short_borrow: str = FBSN.ST_Borrow.value,
+                    short_bond_payable: str = FBSN.ST_Bond_Payable.value,
+                    short_iliq_liability_1y: str = FBSN.ST_IL_LB_1Y.value,
+                    switch: bool = False):
         """
-        短期偿债能力指标1：（现金及现金等价物 + TTM经营性现金流 - 短期有息负债）/ 总资产
+        短期偿债能力指标1(ShortDebt2_CFPA)：（现金及现金等价物 + TTM经营性现金流 - 短期有息负债）/ 总资产
         现金及现金等价物 = 货币资金 + 交易性金融资产
         经营性现金流 = 经营性现金流量净额
         短期有息负债 = 短期借款 + 短期应付债券 + 一年内到期的非流动负债
@@ -356,18 +356,18 @@ class FinancialSolvencyFactor(FactorBase):
         return F
 
     @classmethod
-    def ShortDebt2_CFPA_qoq(cls,
-                            data: pd.DataFrame,
-                            total_asset: str = FBSN.Total_Asset.value,
-                            currency: str = FBSN.Currency.value,
-                            tradable_asset: str = FBSN.Tradable_Asset.value,
-                            op_net_cash_flow: str = FCFSN.Op_Net_CF.value,
-                            short_borrow: str = FBSN.ST_Borrow.value,
-                            short_bond_payable: str = FBSN.ST_Bond_Payable.value,
-                            short_iliq_liability_1y: str = FBSN.ST_IL_LB_1Y.value,
-                            switch: bool = False):
+    def Solvency011(cls,
+                    data: pd.DataFrame,
+                    total_asset: str = FBSN.Total_Asset.value,
+                    currency: str = FBSN.Currency.value,
+                    tradable_asset: str = FBSN.Tradable_Asset.value,
+                    op_net_cash_flow: str = FCFSN.Op_Net_CF.value,
+                    short_borrow: str = FBSN.ST_Borrow.value,
+                    short_bond_payable: str = FBSN.ST_Bond_Payable.value,
+                    short_iliq_liability_1y: str = FBSN.ST_IL_LB_1Y.value,
+                    switch: bool = False):
         """
-        短期偿债能力指标1：（现金及现金等价物 + TTM经营性现金流 - 短期有息负债）/ 总资产
+        短期偿债能力指标1(ShortDebt2_CFPA_qoq)：（现金及现金等价物 + TTM经营性现金流 - 短期有息负债）/ 总资产
         现金及现金等价物 = 货币资金 + 交易性金融资产
         经营性现金流 = 经营性现金流量净额
         短期有息负债 = 短期借款 + 短期应付债券 + 一年内到期的非流动负债
@@ -415,18 +415,18 @@ class FinancialSolvencyFactor(FactorBase):
         return F
 
     @classmethod
-    def ShortDebt2_CFPA_qoq_abs(cls,
-                                data: pd.DataFrame,
-                                total_asset: str = FBSN.Total_Asset.value,
-                                currency: str = FBSN.Currency.value,
-                                tradable_asset: str = FBSN.Tradable_Asset.value,
-                                op_net_cash_flow: str = FCFSN.Op_Net_CF.value,
-                                short_borrow: str = FBSN.ST_Borrow.value,
-                                short_bond_payable: str = FBSN.ST_Bond_Payable.value,
-                                short_iliq_liability_1y: str = FBSN.ST_IL_LB_1Y.value,
-                                switch: bool = False):
+    def Solvency014(cls,
+                    data: pd.DataFrame,
+                    total_asset: str = FBSN.Total_Asset.value,
+                    currency: str = FBSN.Currency.value,
+                    tradable_asset: str = FBSN.Tradable_Asset.value,
+                    op_net_cash_flow: str = FCFSN.Op_Net_CF.value,
+                    short_borrow: str = FBSN.ST_Borrow.value,
+                    short_bond_payable: str = FBSN.ST_Bond_Payable.value,
+                    short_iliq_liability_1y: str = FBSN.ST_IL_LB_1Y.value,
+                    switch: bool = False):
         """
-        短期偿债能力指标1：（现金及现金等价物 + TTM经营性现金流 - 短期有息负债）/ 总资产
+        短期偿债能力指标1(ShortDebt2_CFPA_qoq_abs)：（现金及现金等价物 + TTM经营性现金流 - 短期有息负债）/ 总资产
         现金及现金等价物 = 货币资金 + 交易性金融资产
         经营性现金流 = 经营性现金流量净额
         短期有息负债 = 短期借款 + 短期应付债券 + 一年内到期的非流动负债
@@ -475,19 +475,19 @@ class FinancialSolvencyFactor(FactorBase):
         return F
 
     @classmethod
-    def ShortDebt2_CFPA_std(cls,
-                            data: pd.DataFrame,
-                            total_asset: str = FBSN.Total_Asset.value,
-                            currency: str = FBSN.Currency.value,
-                            tradable_asset: str = FBSN.Tradable_Asset.value,
-                            op_net_cash_flow: str = FCFSN.Op_Net_CF.value,
-                            short_borrow: str = FBSN.ST_Borrow.value,
-                            short_bond_payable: str = FBSN.ST_Bond_Payable.value,
-                            short_iliq_liability_1y: str = FBSN.ST_IL_LB_1Y.value,
-                            quarter: int = 8,
-                            switch: bool = False):
+    def Solvency017(cls,
+                    data: pd.DataFrame,
+                    total_asset: str = FBSN.Total_Asset.value,
+                    currency: str = FBSN.Currency.value,
+                    tradable_asset: str = FBSN.Tradable_Asset.value,
+                    op_net_cash_flow: str = FCFSN.Op_Net_CF.value,
+                    short_borrow: str = FBSN.ST_Borrow.value,
+                    short_bond_payable: str = FBSN.ST_Bond_Payable.value,
+                    short_iliq_liability_1y: str = FBSN.ST_IL_LB_1Y.value,
+                    quarter: int = 8,
+                    switch: bool = False):
         """
-        短期偿债能力指标1：（现金及现金等价物 + TTM经营性现金流 - 短期有息负债）/ 总资产
+        短期偿债能力指标1(ShortDebt2_CFPA_std)：（现金及现金等价物 + TTM经营性现金流 - 短期有息负债）/ 总资产
         现金及现金等价物 = 货币资金 + 交易性金融资产
         经营性现金流 = 经营性现金流量净额
         短期有息负债 = 短期借款 + 短期应付债券 + 一年内到期的非流动负债
@@ -535,17 +535,17 @@ class FinancialSolvencyFactor(FactorBase):
         return F
 
     @classmethod
-    def ShortDebt3_CFPA(cls,
-                        data: pd.DataFrame,
-                        total_asset: str = FBSN.Total_Asset.value,
-                        currency: str = FBSN.Currency.value,
-                        tradable_asset: str = FBSN.Tradable_Asset.value,
-                        short_borrow: str = FBSN.ST_Borrow.value,
-                        short_bond_payable: str = FBSN.ST_Bond_Payable.value,
-                        short_iliq_liability_1y: str = FBSN.ST_IL_LB_1Y.value,
-                        switch: bool = False):
+    def Solvency009(cls,
+                    data: pd.DataFrame,
+                    total_asset: str = FBSN.Total_Asset.value,
+                    currency: str = FBSN.Currency.value,
+                    tradable_asset: str = FBSN.Tradable_Asset.value,
+                    short_borrow: str = FBSN.ST_Borrow.value,
+                    short_bond_payable: str = FBSN.ST_Bond_Payable.value,
+                    short_iliq_liability_1y: str = FBSN.ST_IL_LB_1Y.value,
+                    switch: bool = False):
         """
-        短期偿债能力指标3：（现金及现金等价物 - 短期有息负债）/ 总资产
+        短期偿债能力指标3(ShortDebt3_CFPA)：（现金及现金等价物 - 短期有息负债）/ 总资产
         现金及现金等价物 = 货币资金 + 交易性金融资产
         短期有息负债 = 短期借款 + 短期应付债券 + 一年内到期的非流动负债
         :param data:
@@ -589,17 +589,17 @@ class FinancialSolvencyFactor(FactorBase):
         return F
 
     @classmethod
-    def ShortDebt3_CFPA_qoq(cls,
-                            data: pd.DataFrame,
-                            total_asset: str = FBSN.Total_Asset.value,
-                            currency: str = FBSN.Currency.value,
-                            tradable_asset: str = FBSN.Tradable_Asset.value,
-                            short_borrow: str = FBSN.ST_Borrow.value,
-                            short_bond_payable: str = FBSN.ST_Bond_Payable.value,
-                            short_iliq_liability_1y: str = FBSN.ST_IL_LB_1Y.value,
-                            switch: bool = False):
+    def Solvency012(cls,
+                    data: pd.DataFrame,
+                    total_asset: str = FBSN.Total_Asset.value,
+                    currency: str = FBSN.Currency.value,
+                    tradable_asset: str = FBSN.Tradable_Asset.value,
+                    short_borrow: str = FBSN.ST_Borrow.value,
+                    short_bond_payable: str = FBSN.ST_Bond_Payable.value,
+                    short_iliq_liability_1y: str = FBSN.ST_IL_LB_1Y.value,
+                    switch: bool = False):
         """
-        短期偿债能力指标3：（现金及现金等价物 - 短期有息负债）/ 总资产
+        短期偿债能力指标3(ShortDebt3_CFPA_qoq)：（现金及现金等价物 - 短期有息负债）/ 总资产
         现金及现金等价物 = 货币资金 + 交易性金融资产
         短期有息负债 = 短期借款 + 短期应付债券 + 一年内到期的非流动负债
         :param data:
@@ -645,17 +645,17 @@ class FinancialSolvencyFactor(FactorBase):
         return F
 
     @classmethod
-    def ShortDebt3_CFPA_qoq_abs(cls,
-                                data: pd.DataFrame,
-                                total_asset: str = FBSN.Total_Asset.value,
-                                currency: str = FBSN.Currency.value,
-                                tradable_asset: str = FBSN.Tradable_Asset.value,
-                                short_borrow: str = FBSN.ST_Borrow.value,
-                                short_bond_payable: str = FBSN.ST_Bond_Payable.value,
-                                short_iliq_liability_1y: str = FBSN.ST_IL_LB_1Y.value,
-                                switch: bool = False):
+    def Solvency015(cls,
+                    data: pd.DataFrame,
+                    total_asset: str = FBSN.Total_Asset.value,
+                    currency: str = FBSN.Currency.value,
+                    tradable_asset: str = FBSN.Tradable_Asset.value,
+                    short_borrow: str = FBSN.ST_Borrow.value,
+                    short_bond_payable: str = FBSN.ST_Bond_Payable.value,
+                    short_iliq_liability_1y: str = FBSN.ST_IL_LB_1Y.value,
+                    switch: bool = False):
         """
-        短期偿债能力指标1：（现金及现金等价物 + TTM经营性现金流 - 短期有息负债）/ 总资产
+        短期偿债能力指标1(ShortDebt3_CFPA_qoq_abs)：（现金及现金等价物 + TTM经营性现金流 - 短期有息负债）/ 总资产
         现金及现金等价物 = 货币资金 + 交易性金融资产
         短期有息负债 = 短期借款 + 短期应付债券 + 一年内到期的非流动负债
         :param data:
@@ -702,18 +702,18 @@ class FinancialSolvencyFactor(FactorBase):
         return F
 
     @classmethod
-    def ShortDebt3_CFPA_std(cls,
-                            data: pd.DataFrame,
-                            total_asset: str = FBSN.Total_Asset.value,
-                            currency: str = FBSN.Currency.value,
-                            tradable_asset: str = FBSN.Tradable_Asset.value,
-                            short_borrow: str = FBSN.ST_Borrow.value,
-                            short_bond_payable: str = FBSN.ST_Bond_Payable.value,
-                            short_iliq_liability_1y: str = FBSN.ST_IL_LB_1Y.value,
-                            quarter: int = 8,
-                            switch: bool = False):
+    def Solvency018(cls,
+                    data: pd.DataFrame,
+                    total_asset: str = FBSN.Total_Asset.value,
+                    currency: str = FBSN.Currency.value,
+                    tradable_asset: str = FBSN.Tradable_Asset.value,
+                    short_borrow: str = FBSN.ST_Borrow.value,
+                    short_bond_payable: str = FBSN.ST_Bond_Payable.value,
+                    short_iliq_liability_1y: str = FBSN.ST_IL_LB_1Y.value,
+                    quarter: int = 8,
+                    switch: bool = False):
         """
-        短期偿债能力指标1：（现金及现金等价物 + TTM经营性现金流 - 短期有息负债）/ 总资产
+        短期偿债能力指标1(ShortDebt3_CFPA_std)：（现金及现金等价物 + TTM经营性现金流 - 短期有息负债）/ 总资产
         现金及现金等价物 = 货币资金 + 交易性金融资产
         短期有息负债 = 短期借款 + 短期应付债券 + 一年内到期的非流动负债
         :param data:
@@ -759,12 +759,15 @@ class FinancialSolvencyFactor(FactorBase):
         return F
 
     @classmethod
-    def PT2NA_Z(cls,
-                data: pd.DataFrame,
-                tax_payable: str = FBSN.Tax_Payable.value,
-                net_asset_in: str = FBSN.Net_Asset_In.value,
-                quarter: int = 8,
-                switch: bool = False):
+    def Solvency023(cls,
+                    data: pd.DataFrame,
+                    tax_payable: str = FBSN.Tax_Payable.value,
+                    net_asset_in: str = FBSN.Net_Asset_In.value,
+                    quarter: int = 8,
+                    switch: bool = False):
+        """
+        应交税费率变化率标准化(PT2NA_Z)
+        """
         func_name = sys._getframe().f_code.co_name
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
@@ -794,12 +797,14 @@ class FinancialSolvencyFactor(FactorBase):
         return F
 
     @classmethod
-    def IT_qoq_Z(cls,
-                 data: pd.DataFrame,
-                 tax: str = FISN.Tax.value,
-                 quarter: int = 8,
-                 switch: bool = False):
-
+    def Solvency019(cls,
+                    data: pd.DataFrame,
+                    tax: str = FISN.Tax.value,
+                    quarter: int = 8,
+                    switch: bool = False):
+        """
+        所得税变化率标准化(IT_qoq_Z)
+        """
         func_name = sys._getframe().f_code.co_name
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
@@ -834,12 +839,14 @@ class FinancialSolvencyFactor(FactorBase):
         return F
 
     @classmethod  # TODO test
-    def PTCF_qoq_Z(cls,
+    def Solvency020(cls,
                    data: pd.DataFrame,
                    all_tax: str = FCFSN.All_Tax.value,
                    quarter: int = 8,
                    switch: bool = False):
-
+        """
+        各项税费变化率标准化(PTCF_qoq_Z)
+        """
         func_name = sys._getframe().f_code.co_name
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
@@ -874,12 +881,14 @@ class FinancialSolvencyFactor(FactorBase):
         return F
 
     @classmethod
-    def OT_qoq_Z(cls,
+    def Solvency021(cls,
                  data: pd.DataFrame,
                  tax_surcharges: str = FISN.Tax_Surcharges.value,
                  quarter: int = 8,
                  switch: bool = False):
-
+        """
+        税金及附加变化率标准化(OT_qoq_Z)
+        """
         func_name = sys._getframe().f_code.co_name
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
@@ -912,13 +921,15 @@ class FinancialSolvencyFactor(FactorBase):
         return F
 
     @classmethod
-    def OT2NP_qoq_Z(cls,
+    def Solvency022(cls,
                     data: pd.DataFrame,
                     tax_surcharges: str = FISN.Tax_Surcharges.value,
                     net_pro_in: str = FISN.Net_Pro_In.value,
                     quarter: int = 8,
                     switch: bool = False):
-
+        """
+        税金及附加占比变化率标准化(OT2NP_qoq_Z)
+        """
         func_name = sys._getframe().f_code.co_name
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
@@ -951,10 +962,10 @@ class FinancialSolvencyFactor(FactorBase):
 
     ####################################################################################################################
     @classmethod
-    def Int_to_Asset_data_raw(cls,
-                              sta: int = 20130101,
-                              end: int = 20200401,
-                              f_type: str = '408001000'):
+    def Solvency006_data_raw(cls,
+                             sta: int = 20130101,
+                             end: int = 20200401,
+                             f_type: str = '408001000'):
         sql_keys = {"BST": {"ST_BORROW": f"\"{FBSN.ST_Borrow.value}\"",
                             "ST_BONDS_PAYABLE": f"\"{FBSN.ST_Bond_Payable.value}\"",
                             "LT_BORROW": f"\"{FBSN.LT_Borrow.value}\"",
@@ -971,10 +982,10 @@ class FinancialSolvencyFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def ShortDebt1_CFPA_data_raw(cls,
-                                 sta: int = 20130101,
-                                 end: int = 20200401,
-                                 f_type: str = '408001000'):
+    def Solvency007_data_raw(cls,
+                             sta: int = 20130101,
+                             end: int = 20200401,
+                             f_type: str = '408001000'):
         sql_keys = {"BST": {"MONETARY_CAP": f"\"{FBSN.Currency.value}\"",
                             "TRADABLE_FIN_ASSETS": f"\"{FBSN.Tradable_Asset.value}\"",
                             "ST_BORROW": f"\"{FBSN.ST_Borrow.value}\"",
@@ -1003,31 +1014,31 @@ class FinancialSolvencyFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def ShortDebt1_CFPA_qoq_data_raw(cls,
+    def Solvency010_data_raw(cls,
                                      sta: int = 20130101,
                                      end: int = 20200401,
                                      f_type: str = '408001000'):
-        return cls.ShortDebt1_CFPA_data_raw(sta, end, f_type)
+        return cls.Solvency007_data_raw(sta, end, f_type)
 
     @classmethod
-    def ShortDebt1_CFPA_qoq_abs_data_raw(cls,
-                                         sta: int = 20130101,
-                                         end: int = 20200401,
-                                         f_type: str = '408001000'):
-        return cls.ShortDebt1_CFPA_data_raw(sta, end, f_type)
+    def Solvency013_data_raw(cls,
+                             sta: int = 20130101,
+                             end: int = 20200401,
+                             f_type: str = '408001000'):
+        return cls.Solvency007_data_raw(sta, end, f_type)
 
     @classmethod
-    def ShortDebt1_CFPA_std_data_raw(cls,
-                                     sta: int = 20130101,
-                                     end: int = 20200401,
-                                     f_type: str = '408001000'):
-        return cls.ShortDebt1_CFPA_data_raw(sta, end, f_type)
+    def Solvency016_data_raw(cls,
+                             sta: int = 20130101,
+                             end: int = 20200401,
+                             f_type: str = '408001000'):
+        return cls.Solvency007_data_raw(sta, end, f_type)
 
     @classmethod
-    def ShortDebt2_CFPA_data_raw(cls,
-                                 sta: int = 20130101,
-                                 end: int = 20200401,
-                                 f_type: str = '408001000'):
+    def Solvency008_data_raw(cls,
+                             sta: int = 20130101,
+                             end: int = 20200401,
+                             f_type: str = '408001000'):
 
         sql_keys = {"BST": {"TOT_ASSETS": f"\"{FBSN.Total_Asset.value}\"",
                             "MONETARY_CAP": f"\"{FBSN.Currency.value}\"",
@@ -1058,31 +1069,31 @@ class FinancialSolvencyFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def ShortDebt2_CFPA_qoq_data_raw(cls,
-                                     sta: int = 20130101,
-                                     end: int = 20200401,
-                                     f_type: str = '408001000'):
-        return cls.ShortDebt2_CFPA_data_raw(sta, end, f_type)
+    def Solvency011_data_raw(cls,
+                             sta: int = 20130101,
+                             end: int = 20200401,
+                             f_type: str = '408001000'):
+        return cls.Solvency008_data_raw(sta, end, f_type)
 
     @classmethod
-    def ShortDebt2_CFPA_qoq_abs_data_raw(cls,
-                                         sta: int = 20130101,
-                                         end: int = 20200401,
-                                         f_type: str = '408001000'):
-        return cls.ShortDebt2_CFPA_data_raw(sta, end, f_type)
+    def Solvency014_data_raw(cls,
+                             sta: int = 20130101,
+                             end: int = 20200401,
+                             f_type: str = '408001000'):
+        return cls.Solvency008_data_raw(sta, end, f_type)
 
     @classmethod
-    def ShortDebt2_CFPA_std_data_raw(cls,
-                                     sta: int = 20130101,
-                                     end: int = 20200401,
-                                     f_type: str = '408001000'):
-        return cls.ShortDebt2_CFPA_data_raw(sta, end, f_type)
+    def Solvency017_data_raw(cls,
+                             sta: int = 20130101,
+                             end: int = 20200401,
+                             f_type: str = '408001000'):
+        return cls.Solvency008_data_raw(sta, end, f_type)
 
     @classmethod
-    def ShortDebt3_CFPA_data_raw(cls,
-                                 sta: int = 20130101,
-                                 end: int = 20200401,
-                                 f_type: str = '408001000'):
+    def Solvency009_data_raw(cls,
+                             sta: int = 20130101,
+                             end: int = 20200401,
+                             f_type: str = '408001000'):
 
         sql_keys = {"BST": {"TOT_ASSETS": f"\"{FBSN.Total_Asset.value}\"",
                             "MONETARY_CAP": f"\"{FBSN.Currency.value}\"",
@@ -1102,31 +1113,31 @@ class FinancialSolvencyFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def ShortDebt3_CFPA_qoq_data_raw(cls,
-                                     sta: int = 20130101,
-                                     end: int = 20200401,
-                                     f_type: str = '408001000'):
-        return cls.ShortDebt3_CFPA_data_raw(sta, end, f_type)
+    def Solvency012_data_raw(cls,
+                             sta: int = 20130101,
+                             end: int = 20200401,
+                             f_type: str = '408001000'):
+        return cls.Solvency009_data_raw(sta, end, f_type)
 
     @classmethod
-    def ShortDebt3_CFPA_qoq_abs_data_raw(cls,
-                                         sta: int = 20130101,
-                                         end: int = 20200401,
-                                         f_type: str = '408001000'):
-        return cls.ShortDebt3_CFPA_data_raw(sta, end, f_type)
+    def Solvency015_data_raw(cls,
+                             sta: int = 20130101,
+                             end: int = 20200401,
+                             f_type: str = '408001000'):
+        return cls.Solvency009_data_raw(sta, end, f_type)
 
     @classmethod
-    def ShortDebt3_CFPA_std_data_raw(cls,
-                                     sta: int = 20130101,
-                                     end: int = 20200401,
-                                     f_type: str = '408001000'):
-        return cls.ShortDebt3_CFPA_data_raw(sta, end, f_type)
+    def Solvency018_data_raw(cls,
+                             sta: int = 20130101,
+                             end: int = 20200401,
+                             f_type: str = '408001000'):
+        return cls.Solvency009_data_raw(sta, end, f_type)
 
     @classmethod
-    def IT_qoq_Z_data_raw(cls,
-                          sta: int = 20130101,
-                          end: int = 20200401,
-                          f_type: str = '408001000'):
+    def Solvency019_data_raw(cls,
+                             sta: int = 20130101,
+                             end: int = 20200401,
+                             f_type: str = '408001000'):
         sql_keys = {"IST": {"INC_TAX": f"\"{FISN.Tax.value}\"",
                             }
                     }
@@ -1148,7 +1159,7 @@ class FinancialSolvencyFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def PTCF_qoq_Z_data_raw(cls,
+    def Solvency020_data_raw(cls,
                             sta: int = 20130101,
                             end: int = 20200401,
                             f_type: str = '408001000',
@@ -1174,7 +1185,7 @@ class FinancialSolvencyFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def OT_qoq_Z_data_raw(cls,
+    def Solvency021_data_raw(cls,
                           sta: int = 20130101,
                           end: int = 20200401,
                           f_type: str = '408001000'):
@@ -1199,7 +1210,7 @@ class FinancialSolvencyFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def OT2NP_qoq_Z_data_raw(cls,
+    def Solvency022_data_raw(cls,
                              sta: int = 20130101,
                              end: int = 20200401,
                              f_type: str = '408001000'):
@@ -1228,10 +1239,10 @@ class FinancialSolvencyFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def PT2NA_Z_data_raw(cls,
-                         sta: int = 20130101,
-                         end: int = 20200401,
-                         f_type: str = '408001000'):
+    def Solvency023_data_raw(cls,
+                             sta: int = 20130101,
+                             end: int = 20200401,
+                             f_type: str = '408001000'):
         sql_keys = {"BST": {"TAXES_SURCHARGES_PAYABLE": f"\"{FBSN.Tax_Payable.value}\"",
                             "TOT_SHRHLDR_EQY_INCL_MIN_INT": f"\"{FBSN.Net_Asset_In.value}\""
                             }

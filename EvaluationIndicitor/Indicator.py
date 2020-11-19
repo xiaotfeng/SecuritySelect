@@ -36,7 +36,7 @@ class Indicator(object):
         period = (end - sta).days
 
         if period == 0:
-            return None
+            return 0
         else:
             ret_a = np.exp(self.accumulative_return(nav)) ** (self.cycle[freq] / period)
             return ret_a

@@ -19,17 +19,17 @@ from constant import (
 
 
 # 收益质量因子
-class FinancialQualityFactor(FactorBase):  # TODO 修改
+class FundamentalQualityFactor(FactorBase):  # TODO 修改
     """408001000: 合并报表； 408006000：母公司报表 """
 
     @classmethod
-    def CSR(cls,
-            data: pd.DataFrame,
-            cash_sales: str = FCFSN.Cash_From_Sales.value,
-            operator_income: str = FISN.Op_Income.value,
-            switch: bool = False):
+    def Quality010(cls,
+                   data: pd.DataFrame,
+                   cash_sales: str = FCFSN.Cash_From_Sales.value,
+                   operator_income: str = FISN.Op_Income.value,
+                   switch: bool = False):
         """
-        收现比 = 销售商品提供劳务收到的现金 / 营业收入
+        收现比(CSR) = 销售商品提供劳务收到的现金 / 营业收入
         :param data:
         :param cash_sales:
         :param operator_income:
@@ -60,12 +60,14 @@ class FinancialQualityFactor(FactorBase):  # TODO 修改
         return F
 
     @classmethod
-    def CSRD(cls,
-             data: pd.DataFrame,
-             cash_sales: str = FCFSN.Cash_From_Sales.value,
-             operator_income: str = FISN.Op_Income.value,
-             switch: bool = False):
-
+    def Quality011(cls,
+                   data: pd.DataFrame,
+                   cash_sales: str = FCFSN.Cash_From_Sales.value,
+                   operator_income: str = FISN.Op_Income.value,
+                   switch: bool = False):
+        """
+        收现比变动(CSRD)
+        """
         func_name = sys._getframe().f_code.co_name
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
@@ -91,13 +93,13 @@ class FinancialQualityFactor(FactorBase):  # TODO 修改
         return F
 
     @classmethod
-    def APR(cls,
-            data: pd.DataFrame,
-            op_net_cash_flow: str = FCFSN.Op_Net_CF.value,
-            operator_profit: str = FISN.Op_Pro.value,
-            switch: bool = False):
+    def Quality008(cls,
+                   data: pd.DataFrame,
+                   op_net_cash_flow: str = FCFSN.Op_Net_CF.value,
+                   operator_profit: str = FISN.Op_Pro.value,
+                   switch: bool = False):
         """
-        应计利润占比 = 应计利润 / 营业利润
+        应计利润占比(APR) = 应计利润 / 营业利润
         应计利润 = 营业利润 - 经营性现金流量净额
         :param data:
         :param op_net_cash_flow:
@@ -131,12 +133,14 @@ class FinancialQualityFactor(FactorBase):  # TODO 修改
         return F
 
     @classmethod
-    def APRD(cls,
-             data: pd.DataFrame,
-             op_net_cash_flow: str = FCFSN.Op_Net_CF.value,
-             operator_profit: str = FISN.Op_Pro.value,
-             switch: bool = False):
-
+    def Quality009(cls,
+                   data: pd.DataFrame,
+                   op_net_cash_flow: str = FCFSN.Op_Net_CF.value,
+                   operator_profit: str = FISN.Op_Pro.value,
+                   switch: bool = False):
+        """
+        应计利润占比变动(APRD)
+        """
         func_name = sys._getframe().f_code.co_name
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
@@ -165,10 +169,10 @@ class FinancialQualityFactor(FactorBase):  # TODO 修改
 
     ####################################################################################################################
     @classmethod
-    def CSR_data_raw(cls,
-                     sta: int = 20130101,
-                     end: int = 20200401,
-                     f_type: str = '408001000'):
+    def Quality010_data_raw(cls,
+                            sta: int = 20130101,
+                            end: int = 20200401,
+                            f_type: str = '408001000'):
         sql_keys = {"IST": {"OPER_PROFIT": f"\"{FISN.Op_Income.value}\""},
                     "CFT": {"CASH_RECP_SG_AND_RS": f"\"{FCFSN.Cash_From_Sales.value}\""}
                     }
@@ -191,17 +195,17 @@ class FinancialQualityFactor(FactorBase):  # TODO 修改
         return financial_data
 
     @classmethod
-    def CSRD_data_raw(cls,
-                      sta: int = 20130101,
-                      end: int = 20200401,
-                      f_type: str = '408001000'):
-        return cls.CSR_data_raw(sta, end, f_type)
+    def Quality011_data_raw(cls,
+                            sta: int = 20130101,
+                            end: int = 20200401,
+                            f_type: str = '408001000'):
+        return cls.Quality010_data_raw(sta, end, f_type)
 
     @classmethod
-    def APR_data_raw(cls,
-                     sta: int = 20130101,
-                     end: int = 20200401,
-                     f_type: str = '408001000'):
+    def Quality008_data_raw(cls,
+                            sta: int = 20130101,
+                            end: int = 20200401,
+                            f_type: str = '408001000'):
 
         sql_keys = {"IST": {"OPER_REV": f"\"{FISN.Op_Pro.value}\""},
                     "CFT": {"NET_CASH_FLOWS_OPER_ACT": f"\"{FCFSN.Op_Net_CF.value}\""},
@@ -226,11 +230,11 @@ class FinancialQualityFactor(FactorBase):  # TODO 修改
         return financial_data
 
     @classmethod
-    def APRD_data_raw(cls,
-                      sta: int = 20130101,
-                      end: int = 20200401,
-                      f_type: str = '408001000'):
-        return cls.APR_data_raw(sta, end, f_type)
+    def Quality009_data_raw(cls,
+                            sta: int = 20130101,
+                            end: int = 20200401,
+                            f_type: str = '408001000'):
+        return cls.Quality008_data_raw(sta, end, f_type)
 
 
 if __name__ == '__main__':

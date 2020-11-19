@@ -23,7 +23,7 @@ class FactorBase(object):
 
     def __init__(self):
         self.Q = SQL()
-        self.list_date = SQL().query(SQL().list_date_SQL())
+        self.list_date = SQL().list_date_csv()
 
     # 财务数据转换，需要考虑未来数据
     def _switch_freq(self,
@@ -43,6 +43,7 @@ class FactorBase(object):
         :param exchange:
         :return:
         """
+
         def _reindex(data: pd.DataFrame, name_: str):
             """填充有风险哦"""
             # data_re = data.reindex(trade_date[KN.TRADE_DATE.value])
@@ -79,6 +80,12 @@ class FactorBase(object):
     def _csv_data(self, data_name: list, file_name: str = "FactorPool1", ):
         res = pd.read_csv(os.path.join(FPN.factor_inputData.value, file_name + '.csv'),
                           usecols=[KN.TRADE_DATE.value, KN.STOCK_ID.value] + data_name)
+        return res
+
+    def csv_index(self, data_name: list, file_name: str = 'IndexPrice', index_name: str = ''):
+        index_data = pd.read_csv(os.path.join(FPN.factor_inputData.value, file_name + '.csv'),
+                                 usecols=[KN.TRADE_DATE.value, 'index_name'] + data_name)
+        res = index_data[index_data['index_name'] == index_name]
         return res
 
     def _switch_ttm(self, data_: pd.DataFrame, name: str):

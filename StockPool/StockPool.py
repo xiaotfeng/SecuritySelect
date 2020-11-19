@@ -26,7 +26,7 @@ class StockPool(object):
     # ST股标识
     def ST(self,
            data: pd.DataFrame,
-           st: str = 'ST') -> pd.Series(bool):
+           st: str = 'isst') -> pd.Series(bool):
         """
         对ST,*ST股进行标记
         合格股票标记为True
@@ -39,17 +39,17 @@ class StockPool(object):
     # 成立年限
     def established(self,
                     data: pd.DataFrame,
-                    listdate: str = 'listdate',
+                    listdate: str = 'period2list',
                     days: int = 90) -> pd.Series(bool):
         """
         以真实成立时间进行筛选
         合格股票标记为True
         """
         data_sub = data.copy(deep=True)
-        dt_now = dt.datetime.now()
-        data_sub[listdate].fillna(dt_now.date().__str__(), inplace=True)
-        list_days = data_sub[listdate].apply(lambda x: (dt_now - dt.datetime.strptime(x, "%Y-%m-%d")).days)
-        J = list_days > days
+        # dt_now = dt.datetime.now()
+        # data_sub[listdate].fillna(dt_now.date().__str__(), inplace=True)
+        # list_days = data_sub[listdate].apply(lambda x: (dt_now - dt.datetime.strptime(x, "%Y-%m-%d")).days)
+        J = data_sub[listdate] > days
 
         res = J.groupby(KN.STOCK_ID.value, group_keys=False).shift(1).fillna(True)
         self.index_list.append(res[res].index)
@@ -129,7 +129,7 @@ class StockPool(object):
         :return:
         """
         result_path = os.path.join(FPN.stock_pool_path.value, sys._getframe().f_code.co_name + '_result.csv')
-        if os.path.exists(result_path):
+        if os.path.exists(result_path):  # os.path.exists(result_path)
             index_effect_stock = pd.read_csv(result_path, index_col=[KN.TRADE_DATE.value, KN.STOCK_ID.value]).index
         else:
             # get data file path
@@ -139,22 +139,22 @@ class StockPool(object):
             print(f"{dt.datetime.now().strftime('%X')}: Read the data of stock pool")
             data_input = pd.read_csv(data_address)
             data_input.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)
-
+            self.established(data=data_input, days=225)
             # get filter condition
             print(f"{dt.datetime.now().strftime('%X')}: Weed out ST stock")
             self.ST(data_input)
 
             print(f"{dt.datetime.now().strftime('%X')}: Weed out Price Up_Down limit stock")
-            # self.price_limit(data_input, PVN.Up_Down.value)
+            self.price_limit(data_input, PVN.Up_Down.value)
 
             print(f"{dt.datetime.now().strftime('%X')}: Weed out stock established in less than 3 months")
             self.established(data=data_input, days=225)
 
             print(f"{dt.datetime.now().strftime('%X')}: Weed out stock illiquidity")
-            # self.liquidity(data_input)
+            self.liquidity(data_input)
 
             print(f"{dt.datetime.now().strftime('%X')}: Weed out suspension stock")
-            # self.suspension(data_input)
+            self.suspension(data_input)
 
             # Filter
             index_effect_stock = reduce(lambda x, y: x.intersection(y), self.index_list)

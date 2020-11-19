@@ -16,7 +16,7 @@ from constant import (
 class LabelPool(object):
     PATH = {"price": os.path.join(FPN.label_pool_path.value, 'StockPrice.csv'),
             "industry": os.path.join(FPN.label_pool_path.value, 'IndustryLabel.csv'),
-            "composition": os.path.join(FPN.label_pool_path.value, 'ConstituentStocks_new.csv'),
+            "composition": os.path.join(FPN.label_pool_path.value, 'IndexStockWeight.csv'),
             "index_weight": os.path.join(FPN.label_pool_path.value, 'IndexStockWeight.csv'),
             "mv": os.path.join(FPN.label_pool_path.value, 'MV.csv'), }
 
@@ -52,7 +52,7 @@ class LabelPool(object):
                                                           level=KN.STOCK_ID.value).apply(lambda x: x / x.shift(1) - 1)
 
         result = round(result, 6)
-        result.name = PVN.STOCK_RETURN.value + '_' + return_type
+        result.name = KN.STOCK_RETURN.value + '_' + return_type
         return result
 
     def industry_weight(self,
@@ -141,6 +141,11 @@ class LabelPool(object):
                         PVN.CLOSE.value]] = price_data[[PVN.OPEN.value,
                                                         PVN.CLOSE.value]].mul(price_data[PVN.ADJ_FACTOR.value], axis=0)
 
+            # switch name
+            composition_data.rename(columns={SN.CSI_50_INDUSTRY_WEIGHT.value: SN.CSI_50.value,
+                                             SN.CSI_300_INDUSTRY_WEIGHT.value: SN.CSI_300.value,
+                                             SN.CSI_500_INDUSTRY_WEIGHT.value: SN.CSI_500.value}, inplace=True)
+
             print(f"{dt.datetime.now().strftime('%X')}: calculate stock daily return label")
             stock_return_close = self.stock_return(price_data, return_type=PVN.CLOSE.value)
             stock_return_open = self.stock_return(price_data, return_type=PVN.OPEN.value)
@@ -196,5 +201,5 @@ if __name__ == '__main__':
     # df_mv.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)
 
     A = LabelPool()
-    op = A.industry_mv(df_index, df_industry, df_mv)
+    A.LabelPool1()
     pass

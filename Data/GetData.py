@@ -5,6 +5,7 @@ import os
 from constant import (
     KeyName as KN,
     PriceVolumeName as PVN,
+    FilePathName as FPN,
     SpecialName as SN,
     ExchangeName as EN)
 
@@ -180,6 +181,14 @@ class SQL(object):
                                                  sta=date_sta,
                                                  end=date_end)
         return sql_date
+
+    def trade_date_csv(self, file_path: str = FPN.Trade_Date.value, file_name: str = 'TradeDate.csv'):
+        trade_date = pd.read_csv(os.path.join(file_path, file_name))
+        return trade_date
+
+    def list_date_csv(self, file_path: str = FPN.List_Date.value, file_name: str = 'ListDate.csv'):
+        list_date = pd.read_csv(os.path.join(file_path, file_name))
+        return list_date
 
     # 个股上市日期
     def list_date_SQL(self):

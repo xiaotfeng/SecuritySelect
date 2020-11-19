@@ -19,16 +19,18 @@ from constant import (
 
 
 # 盈利能力因子
-class FinancialProfitabilityFactor(FactorBase):
+class FundamentalProfitFactor(FactorBase):
     """408001000: 合并报表； 408006000：母公司报表 """
 
     @classmethod  # TODO
-    def ROA_ttm(cls,
-                data: pd.DataFrame,
-                net_profit_in: str = FISN.Net_Pro_In.value,
-                total_asset: str = FBSN.Total_Asset.value,
-                switch: bool = False):
-
+    def Profit013(cls,
+                  data: pd.DataFrame,
+                  net_profit_in: str = FISN.Net_Pro_In.value,
+                  total_asset: str = FBSN.Total_Asset.value,
+                  switch: bool = False):
+        """
+        总资产净利率(TTM)(ROA_TTM)
+        """
         func_name = sys._getframe().f_code.co_name
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
@@ -53,13 +55,13 @@ class FinancialProfitabilityFactor(FactorBase):
         return F
 
     @classmethod
-    def ROA_ttm_T(cls,
+    def Profit032(cls,
                   data: pd.DataFrame,
                   net_profit_in: str = FISN.Net_Pro_In.value,
                   total_asset: str = FBSN.Total_Asset.value,
                   switch: bool = False):
         """
-        单季度ROA（同比）
+        总资产净利率(TTM,同比)(ROA_ttm_T)
         :param data:
         :param net_profit_in:
         :param total_asset:
@@ -93,14 +95,14 @@ class FinancialProfitabilityFactor(FactorBase):
         return F
 
     @classmethod
-    def DPR_ttm(cls,
-                data: pd.DataFrame,
-                Surplus_Reserves: str = FBSN.Surplus_Reserves.value,
-                Undistributed_Profit: str = FBSN.Undistributed_Profit.value,
-                net_profit_in: str = FISN.Net_Pro_In.value,
-                switch: bool = False):
+    def Profit025(cls,
+                  data: pd.DataFrame,
+                  Surplus_Reserves: str = FBSN.Surplus_Reserves.value,
+                  Undistributed_Profit: str = FBSN.Undistributed_Profit.value,
+                  net_profit_in: str = FISN.Net_Pro_In.value,
+                  switch: bool = False):
         """
-        股利支付率 = 每股股利/每股净利润 = （期末留存收益 - 期初留存收益） / 净利润
+        股利支付率_TTM(DPR_TTM) = 每股股利/每股净利润 = （期末留存收益 - 期初留存收益） / 净利润
         留存收益 = 盈余公积 + 未分配利润
         :param data:
         :param Surplus_Reserves:
@@ -135,12 +137,15 @@ class FinancialProfitabilityFactor(FactorBase):
         return F
 
     @classmethod
-    def NP(cls,
-           data: pd.DataFrame,
-           net_profit_in: str = FISN.Net_Pro_In.value,
-           operator_income: str = FISN.Op_Income.value,
-           switch: bool = False):
+    def Profit026(cls,
+                  data: pd.DataFrame,
+                  net_profit_in: str = FISN.Net_Pro_In.value,
+                  operator_income: str = FISN.Op_Income.value,
+                  switch: bool = False):
 
+        """
+        当期净利润率(NP)
+        """
         func_name = sys._getframe().f_code.co_name
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
@@ -165,13 +170,13 @@ class FinancialProfitabilityFactor(FactorBase):
         return F
 
     @classmethod
-    def NP_ttm(cls,
-               data: pd.DataFrame,
-               net_profit_in: str = FISN.Net_Pro_In.value,
-               operator_income: str = FISN.Op_Income.value,
-               switch: bool = False):
+    def Profit027(cls,
+                  data: pd.DataFrame,
+                  net_profit_in: str = FISN.Net_Pro_In.value,
+                  operator_income: str = FISN.Op_Income.value,
+                  switch: bool = False):
         """
-        净利润率 = 净利润 / 主营业务收入
+        净利润率(TTM)(NP_TTM) = 净利润 / 主营业务收入
         :param data:
         :param net_profit_in:
         :param operator_income:
@@ -203,13 +208,13 @@ class FinancialProfitabilityFactor(FactorBase):
         return F
 
     @classmethod
-    def OPM(cls,
-            data: pd.DataFrame,
-            total_operator_income: str = FISN.Total_Op_Income.value,
-            operator_profit: str = FISN.Op_Pro.value,
-            switch: bool = False):
+    def Profit028(cls,
+                  data: pd.DataFrame,
+                  total_operator_income: str = FISN.Total_Op_Income.value,
+                  operator_profit: str = FISN.Op_Pro.value,
+                  switch: bool = False):
         """
-        营业利润率 = 营业利润 / 总营业收入
+        营业利润率(OPM) = 营业利润 / 总营业收入
         :param data:
         :param total_operator_income:
         :param operator_profit:
@@ -240,13 +245,13 @@ class FinancialProfitabilityFactor(FactorBase):
         return F
 
     @classmethod
-    def OPM_ttm(cls,
-                data: pd.DataFrame,
-                total_operator_income: str = FISN.Total_Op_Income.value,
-                operator_profit: str = FISN.Op_Pro.value,
-                switch: bool = False):
+    def Profit029(cls,
+                  data: pd.DataFrame,
+                  total_operator_income: str = FISN.Total_Op_Income.value,
+                  operator_profit: str = FISN.Op_Pro.value,
+                  switch: bool = False):
         """
-        营业利润率 = 营业利润 / 总营业收入
+        营业利润率(TTM)(OPM_TTM) = 营业利润 / 总营业收入
         :param data:
         :param total_operator_income:
         :param operator_profit:
@@ -278,13 +283,13 @@ class FinancialProfitabilityFactor(FactorBase):
         return F
 
     @classmethod
-    def NPM_T(cls,
-              data: pd.DataFrame,
-              net_profit_in: str = FISN.Net_Pro_In.value,
-              operator_income: str = FISN.Op_Income.value,
-              switch: bool = False):
+    def Profit031(cls,
+                  data: pd.DataFrame,
+                  net_profit_in: str = FISN.Net_Pro_In.value,
+                  operator_income: str = FISN.Op_Income.value,
+                  switch: bool = False):
         """
-        净利润率(同比) = 本期净利润 / 本期主营业务收入 - 上期净利润 / 上期主营业务收入
+        净利润率(同比)(NPM_T) = 本期净利润 / 本期主营业务收入 - 上期净利润 / 上期主营业务收入
         :param data:
         :param net_profit_in:
         :param operator_income:
@@ -318,10 +323,10 @@ class FinancialProfitabilityFactor(FactorBase):
 
     ####################################################################################################################
     @classmethod
-    def ROA_ttm_data_raw(cls,
-                         sta: int = 20130101,
-                         end: int = 20200401,
-                         f_type: str = '408001000'):
+    def Profit013_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
         """
 
         :param end:
@@ -349,17 +354,17 @@ class FinancialProfitabilityFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def ROA_ttm_T_data_raw(cls,
+    def Profit032_data_raw(cls,
                            sta: int = 20130101,
                            end: int = 20200401,
                            f_type: str = '408001000'):
-        return cls.ROA_ttm_data_raw(sta=sta, end=end, f_type=f_type)
+        return cls.Profit013_data_raw(sta=sta, end=end, f_type=f_type)
 
     @classmethod
-    def DPR_ttm_data_raw(cls,
-                         sta: int = 20130101,
-                         end: int = 20200401,
-                         f_type: str = '408001000'):
+    def Profit025_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
 
         sql_keys = {"IST": {"NET_PROFIT_INCL_MIN_INT_INC": f"\"{FISN.Net_Pro_In.value}\""},
                     "BST": {"SURPLUS_RSRV": f"\"{FBSN.Surplus_Reserves.value}\"",
@@ -389,10 +394,10 @@ class FinancialProfitabilityFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def NP_ttm_data_raw(cls,
-                        sta: int = 20130101,
-                        end: int = 20200401,
-                        f_type: str = '408001000'):
+    def Profit027_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
 
         sql_keys = {"IST": {"NET_PROFIT_INCL_MIN_INT_INC": f"\"{FISN.Net_Pro_In.value}\"",
                             "OPER_REV": f"\"{FISN.Op_Income.value}\""},
@@ -418,10 +423,10 @@ class FinancialProfitabilityFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def NP_data_raw(cls,
-                    sta: int = 20130101,
-                    end: int = 20200401,
-                    f_type: str = '408001000'):
+    def Profit026_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
 
         sql_keys = {"IST": {"NET_PROFIT_INCL_MIN_INT_INC": f"\"{FISN.Net_Pro_In.value}\"",
                             "OPER_REV": f"\"{FISN.Op_Income.value}\""},
@@ -438,10 +443,10 @@ class FinancialProfitabilityFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def OPM_data_raw(cls,
-                     sta: int = 20130101,
-                     end: int = 20200401,
-                     f_type: str = '408001000'):
+    def Profit028_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
 
         sql_keys = {"IST": {"TOT_OPER_REV": f"\"{FISN.Total_Op_Income.value}\"",
                             "OPER_PROFIT": f"\"{FISN.Op_Pro.value}\""},
@@ -458,10 +463,10 @@ class FinancialProfitabilityFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def OPM_ttm_data_raw(cls,
-                         sta: int = 20130101,
-                         end: int = 20200401,
-                         f_type: str = '408001000'):
+    def Profit029_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
 
         sql_keys = {"IST": {"TOT_OPER_REV": f"\"{FISN.Total_Op_Income.value}\"",
                             "OPER_PROFIT": f"\"{FISN.Op_Pro.value}\""},
@@ -486,9 +491,9 @@ class FinancialProfitabilityFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def NPM_T_data_raw(cls,
-                       sta: int = 20130101,
-                       end: int = 20200401,
-                       f_type: str = '408001000'):
+    def Profit031_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
 
-        return cls.NP_ttm_data_raw(sta=sta, end=end, f_type=f_type)
+        return cls.Profit027_data_raw(sta=sta, end=end, f_type=f_type)

@@ -6,15 +6,9 @@
 import pandas as pd
 import numpy as np
 import statsmodels.api as sm
-import time
 from functools import reduce
-
-from FactorProcess.FactorProcess import FactorProcess
 from constant import (
-    KeyName as KN,
-    SpecialName as SN,
     PriceVolumeName as PVN,
-    timer
 )
 
 
@@ -114,7 +108,7 @@ class RiskModel(object):
                        decay: int = 2) -> pd.DataFrame:
         # Exponentially weighted index volatility: Half-Life attenuation
 
-        w_list = Half_time(period=data.shape[0], decay=decay)
+        w_list = self.Half_time(period=data.shape[0], decay=decay)
         w_list = sorted(w_list, reverse=False)  # 升序排列
 
         cov_w = pd.DataFrame(np.cov(data.T, aweights=w_list), index=data.columns, columns=data.columns)
@@ -154,7 +148,7 @@ class RiskModel(object):
         matrix_order = data.shift(order).dropna(axis=0, how='all')
         matrix = data.iloc[order:, :].copy(deep=True)
 
-        w_list = Half_time(period=matrix.shape[0], decay=decay)
+        w_list = self.Half_time(period=matrix.shape[0], decay=decay)
         w_list = sorted(w_list, reverse=False)  # 升序排列
 
         covs = np.cov(matrix.T, matrix_order.T, aweights=w_list)  # 需要再测试
@@ -298,7 +292,7 @@ class RiskModel(object):
 
         try:
             delta_n = df_N1.groupby('Group').apply(
-                    lambda x: np.nan if x.empty else pow(sum((x['sigma_n'] - x['sigma_n_weight']) ** 2) / x.shape[0], 0.5))
+                lambda x: np.nan if x.empty else pow(sum((x['sigma_n'] - x['sigma_n_weight']) ** 2) / x.shape[0], 0.5))
         except Exception as e:
             delta_n = df_N1.groupby('Group').apply(
                 lambda x: np.nan if x.empty else pow(sum((x['sigma_n'] - x['sigma_n_weight']) ** 2) / x.shape[0], 0.5))
@@ -309,11 +303,20 @@ class RiskModel(object):
         df_N2 = pd.merge(df_N1, delta_n, left_on=['Group'], right_index=True, how='left')
 
         # 压缩系数
-        df_N2['V_n'] = q * abs(df_N2['sigma_n'] - df_N2['sigma_n_weight']) / \
-                       (df_N2['delta'] + q * abs(df_N2['sigma_n'] - df_N2['sigma_n_weight']))
+        df_N2['V_n'] = q * abs(df_N2['sigma_n'] - df_N2['sigma_n_weight']) / (df_N2['delta'] + q * abs(df_N2['sigma_n'] - df_N2['sigma_n_weight']))
 
         # 调整后的特异波动
         sigma_SH = df_N2['V_n'] * df_N2['sigma_n_weight'] + (1 - df_N2['V_n']) * df_N2['sigma_n']
         F_SH = pd.DataFrame(np.diag(np.array(sigma_SH)), index=sigma_SH.index, columns=sigma_SH.index)
 
         return F_SH
+
+    # 半衰权重
+    @staticmethod
+    def Half_time(period: int, decay: int = 2) -> list:
+
+        weight_list = [pow(2, (i - period - 1) / decay) for i in range(1, period + 1)]
+
+        weight_1 = [i / sum(weight_list) for i in weight_list]
+
+        return weight_1

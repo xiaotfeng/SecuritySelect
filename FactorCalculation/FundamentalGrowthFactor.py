@@ -19,20 +19,20 @@ from constant import (
 
 
 # 成长因子
-class FinancialGrowthFactor(FactorBase):
+class FundamentalGrowthFactor(FactorBase):
     """408001000: 合并报表； 408006000：母公司报表 """
 
     def __init__(self):
-        super(FinancialGrowthFactor, self).__init__()
+        super(FundamentalGrowthFactor, self).__init__()
 
     @classmethod
-    def BPS_G_LR(cls,
-                 data: pd.DataFrame,
-                 net_asset_in: str = FBSN.Net_Asset_In.value,
-                 act_capital: str = FBSN.Actual_Capital.value,
-                 switch: bool = False):
+    def Growth013(cls,
+                  data: pd.DataFrame,
+                  net_asset_in: str = FBSN.Net_Asset_In.value,
+                  act_capital: str = FBSN.Actual_Capital.value,
+                  switch: bool = False):
         """
-        每股净资产增长率 = （期末净资产 - 期初净资产） / 期初实收资本
+        每股净资产增长率(BPS_G_LR) = （期末净资产 - 期初净资产） / 期初实收资本
         :param data:
         :param net_asset_in:净资产（含少数股东权益）
         :param act_capital: 实收资本
@@ -67,12 +67,14 @@ class FinancialGrowthFactor(FactorBase):
         return F
 
     @classmethod
-    def EPS_G_ttm(cls,
+    def Growth014(cls,
                   data: pd.DataFrame,
                   net_pro_ex: str = FISN.Net_Pro_Ex.value,
                   act_capital: str = FBSN.Actual_Capital.value,
                   switch: bool = False):
-
+        """
+        每股收益增长率(EPS_G_TTM) = 净利润 / 总股本
+        """
         func_name = sys._getframe().f_code.co_name
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
@@ -99,12 +101,14 @@ class FinancialGrowthFactor(FactorBase):
         return F
 
     @classmethod
-    def ROA_G_ttm(cls,
+    def Growth015(cls,
                   data: pd.DataFrame,
                   net_profit_in: str = FISN.Net_Pro_In.value,
                   total_asset: str = FBSN.Total_Asset.value,
                   switch: bool = False):
-
+        """
+        总资产收益率增长率(ROA_G_TTM)
+        """
         func_name = sys._getframe().f_code.co_name
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
@@ -131,40 +135,13 @@ class FinancialGrowthFactor(FactorBase):
         return F
 
     @classmethod
-    def TA_G_LR(cls,
-                data: pd.DataFrame,
-                total_asset: str = FBSN.Total_Asset.value,
-                switch: bool = False) -> FactorInfo:
-
-        func_name = sys._getframe().f_code.co_name
-        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
-        data.sort_index(inplace=True)
-
-        data[func_name] = data[total_asset].groupby(KN.STOCK_ID.value).apply(lambda x: x / x.shift(1) - 1)
-        data[func_name][np.isinf(data[func_name])] = np.nan  # 无限大值
-
-        if switch:
-            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
-        else:
-            data_fact = None
-
-        data = data.reset_index()
-
-        F = FactorInfo()
-        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
-        F.data = data_fact
-        F.factor_type = data['type'][0]
-        F.factor_category = cls().__class__.__name__
-        F.factor_name = func_name
-
-        return F
-
-    @classmethod
-    def TA_G_ttm(cls,
-                 data: pd.DataFrame,
-                 total_asset: str = FBSN.Total_Asset.value,
-                 switch: bool = False) -> FactorInfo:
-
+    def Growth016(cls,
+                  data: pd.DataFrame,
+                  total_asset: str = FBSN.Total_Asset.value,
+                  switch: bool = False) -> FactorInfo:
+        """
+        总资产增长率(TTM)(TA_G_TTM)
+        """
         func_name = sys._getframe().f_code.co_name
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
@@ -190,321 +167,13 @@ class FinancialGrowthFactor(FactorBase):
         return F
 
     @classmethod
-    def LA_G_LR(cls,
-                data: pd.DataFrame,
-                liq_asset: str = FBSN.Liq_Asset.value,
-                switch: bool = False):
-
-        func_name = sys._getframe().f_code.co_name
-        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
-        data.sort_index(inplace=True)
-
-        data[func_name] = data[liq_asset].groupby(KN.STOCK_ID.value).apply(lambda x: x / x.shift(1) - 1)
-        data[func_name][np.isinf(data[func_name])] = np.nan  # 无限大值
-
-        if switch:
-            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
-        else:
-            data_fact = None
-
-        data = data.reset_index()
-
-        F = FactorInfo()
-        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
-        F.data = data_fact
-        F.factor_type = data['type'][0]
-        F.factor_category = cls().__class__.__name__
-        F.factor_name = func_name
-
-        return F
-
-    @classmethod
-    def LA_G_ttm(cls,
-                 data: pd.DataFrame,
-                 liq_asset: str = FBSN.Liq_Asset.value,
-                 switch: bool = False):
-
-        func_name = sys._getframe().f_code.co_name
-        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
-        data.sort_index(inplace=True)
-
-        data["LA_G"] = data[liq_asset].groupby(KN.STOCK_ID.value, group_keys=False).rolling(4).mean()
-        data[func_name] = data["LA_G"].groupby(KN.STOCK_ID.value).apply(lambda x: x / x.shift(1) - 1)
-        data[func_name][np.isinf(data[func_name])] = np.nan  # 无限大值
-
-        if switch:
-            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
-        else:
-            data_fact = None
-
-        data = data.reset_index()
-
-        F = FactorInfo()
-        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
-        F.data = data_fact
-        F.factor_type = data['type'][0]
-        F.factor_category = cls().__class__.__name__
-        F.factor_name = func_name
-
-        return F
-
-    @classmethod
-    def ILA_G_LR(cls,
-                 data: pd.DataFrame,
-                 iliq_asset: str = FBSN.ILiq_Asset.value,
-                 switch: bool = False):
-
-        func_name = sys._getframe().f_code.co_name
-        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
-        data.sort_index(inplace=True)
-
-        data[func_name] = data[iliq_asset].groupby(KN.STOCK_ID.value).apply(lambda x: x / x.shift(1) - 1)
-        data[func_name][np.isinf(data[func_name])] = np.nan
-
-        if switch:
-            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
-        else:
-            data_fact = None
-
-        data = data.reset_index()
-
-        F = FactorInfo()
-        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
-        F.data = data_fact
-        F.factor_type = data['type'][0]
-        F.factor_category = cls().__class__.__name__
-        F.factor_name = func_name
-
-        return F
-
-    @classmethod
-    def ILA_G_ttm(cls,
+    def Growth017(cls,
                   data: pd.DataFrame,
-                  iliq_asset: str = FBSN.ILiq_Asset.value,
+                  quarter: int = 8,
+                  net_profit_in: str = FISN.Net_Pro_In.value,
                   switch: bool = False):
-
-        func_name = sys._getframe().f_code.co_name
-        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
-        data.sort_index(inplace=True)
-
-        data["ILA_G"] = data[iliq_asset].groupby(KN.STOCK_ID.value, group_keys=False).rolling(4).mean()
-        data[func_name] = data["ILA_G"].groupby(KN.STOCK_ID.value).apply(lambda x: x / x.shift(1) - 1)
-        data[func_name][np.isinf(data[func_name])] = np.nan
-
-        if switch:
-            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
-        else:
-            data_fact = None
-
-        data = data.reset_index()
-
-        F = FactorInfo()
-        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
-        F.data = data_fact
-        F.factor_type = data['type'][0]
-        F.factor_category = cls().__class__.__name__
-        F.factor_name = func_name
-
-        return F
-
-    @classmethod
-    def TA_G_LR_std(cls,
-                    data: pd.DataFrame,
-                    total_asset: str = FBSN.Total_Asset.value,
-                    quarter: int = 8,
-                    switch: bool = False):
-
-        func_name = sys._getframe().f_code.co_name
-        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
-        data.sort_index(inplace=True)
-
-        data['TA_growth'] = data[total_asset].groupby(KN.STOCK_ID.value).apply(lambda x: x / x.shift(1) - 1)
-        data['TA_growth'][np.isinf(data['TA_growth'])] = np.nan  # 无限大值
-        data[func_name] = data['TA_growth'].groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(quarter).std())
-
-        if switch:
-            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
-        else:
-            data_fact = None
-
-        data = data.reset_index()
-
-        F = FactorInfo()
-        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
-        F.data = data_fact
-        F.factor_type = data['type'][0]
-        F.factor_category = cls().__class__.__name__
-        F.factor_name = func_name
-
-        return F
-
-    @classmethod
-    def TA_G_ttm_std(cls,
-                     data: pd.DataFrame,
-                     total_asset: str = FBSN.Total_Asset.value,
-                     quarter: int = 8,
-                     switch: bool = False):
-
-        func_name = sys._getframe().f_code.co_name
-        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
-        data.sort_index(inplace=True)
-
-        data["TA_ttm"] = data[total_asset].groupby(KN.STOCK_ID.value, group_keys=False).rolling(4).mean()
-        data['TA_growth'] = data["TA_ttm"].groupby(KN.STOCK_ID.value).apply(lambda x: x / x.shift(1) - 1)
-        data['TA_growth'][np.isinf(data['TA_growth'])] = np.nan  # 无限大值
-        data[func_name] = data['TA_growth'].groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(quarter).std())
-
-        if switch:
-            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
-        else:
-            data_fact = None
-
-        data = data.reset_index()
-
-        F = FactorInfo()
-        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
-        F.data = data_fact
-        F.factor_type = data['type'][0]
-        F.factor_category = cls().__class__.__name__
-        F.factor_name = func_name
-
-        return F
-
-    @classmethod
-    def LA_G_LR_std(cls,
-                    data: pd.DataFrame,
-                    quarter: int = 8,
-                    liq_asset: str = FBSN.Liq_Asset.value,
-                    switch: bool = False):
-
-        func_name = sys._getframe().f_code.co_name
-        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
-        data.sort_index(inplace=True)
-
-        data['LA_growth'] = data[liq_asset].groupby(KN.STOCK_ID.value).apply(lambda x: x / x.shift(1) - 1)
-        data['LA_growth'][np.isinf(data['LA_growth'])] = np.nan  # 无限大值
-        data[func_name] = data['LA_growth'].groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(quarter).std())
-
-        if switch:
-            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
-        else:
-            data_fact = None
-
-        data = data.reset_index()
-
-        F = FactorInfo()
-        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
-        F.data = data_fact
-        F.factor_type = data['type'][0]
-        F.factor_category = cls().__class__.__name__
-        F.factor_name = func_name
-
-        return F
-
-    @classmethod
-    def LA_G_ttm_std(cls,
-                     data: pd.DataFrame,
-                     quarter: int = 8,
-                     liq_asset: str = FBSN.Liq_Asset.value,
-                     switch: bool = False):
-
-        func_name = sys._getframe().f_code.co_name
-        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
-        data.sort_index(inplace=True)
-
-        data["LA_ttm"] = data[liq_asset].groupby(KN.STOCK_ID.value, group_keys=False).rolling(4).mean()
-        data['LA_growth'] = data["LA_ttm"].groupby(KN.STOCK_ID.value).apply(lambda x: x / x.shift(1) - 1)
-        data['LA_growth'][np.isinf(data['LA_growth'])] = np.nan  # 无限大值
-        data[func_name] = data['LA_growth'].groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(quarter).std())
-
-        if switch:
-            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
-        else:
-            data_fact = None
-
-        data = data.reset_index()
-
-        F = FactorInfo()
-        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
-        F.data = data_fact
-        F.factor_type = data['type'][0]
-        F.factor_category = cls().__class__.__name__
-        F.factor_name = func_name
-
-        return F
-
-    @classmethod
-    def ILA_G_LR_std(cls,
-                     data: pd.DataFrame,
-                     quarter: int = 8,
-                     iliq_asset: str = FBSN.ILiq_Asset.value,
-                     switch: bool = False):
-
-        func_name = sys._getframe().f_code.co_name
-        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
-        data.sort_index(inplace=True)
-
-        data['ILA_growth'] = data[iliq_asset].groupby(KN.STOCK_ID.value).apply(lambda x: x / x.shift(1) - 1)
-        data['ILA_growth'][np.isinf(data['ILA_growth'])] = np.nan  # 无限大值
-        data[func_name] = data['ILA_growth'].groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(quarter).std())
-
-        if switch:
-            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
-        else:
-            data_fact = None
-
-        data = data.reset_index()
-
-        F = FactorInfo()
-        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
-        F.data = data_fact
-        F.factor_type = data['type'][0]
-        F.factor_category = cls().__class__.__name__
-        F.factor_name = func_name
-
-        return F
-
-    @classmethod
-    def ILA_G_ttm_std(cls,
-                      data: pd.DataFrame,
-                      quarter: int = 8,
-                      iliq_asset: str = FBSN.ILiq_Asset.value,
-                      switch: bool = False):
-
-        func_name = sys._getframe().f_code.co_name
-        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
-        data.sort_index(inplace=True)
-
-        data["ILA_ttm"] = data[iliq_asset].groupby(KN.STOCK_ID.value, group_keys=False).rolling(4).mean()
-        data['ILA_growth'] = data["ILA_ttm"].groupby(KN.STOCK_ID.value).apply(lambda x: x / x.shift(1) - 1)
-        data['ILA_growth'][np.isinf(data['ILA_growth'])] = np.nan  # 无限大值
-
-        data[func_name] = data['ILA_growth'].groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(quarter).std())
-
-        if switch:
-            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
-        else:
-            data_fact = None
-
-        data = data.reset_index()
-
-        F = FactorInfo()
-        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
-        F.data = data_fact
-        F.factor_type = data['type'][0]
-        F.factor_category = cls().__class__.__name__
-        F.factor_name = func_name
-
-        return F
-
-    @classmethod
-    def NP_Acc(cls,
-               data: pd.DataFrame,
-               quarter: int = 8,
-               net_profit_in: str = FISN.Net_Pro_In.value,
-               switch: bool = False):
         """
-        净利润加速度指标
+        净利润加速度指标(NP_Acc)
         :param data:
         :param quarter:
         :param net_profit_in:
@@ -535,12 +204,14 @@ class FinancialGrowthFactor(FactorBase):
         return F
 
     @classmethod
-    def NP_Stable(cls,
+    def Growth018(cls,
                   data: pd.DataFrame,
                   quarter: int = 8,
                   net_profit_in: str = FISN.Net_Pro_In.value,
                   switch: bool = False):
-
+        """
+        净利润稳健利润增速(NP_Stable)
+        """
         func_name = sys._getframe().f_code.co_name
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
@@ -569,12 +240,14 @@ class FinancialGrowthFactor(FactorBase):
         return F
 
     @classmethod
-    def NP_SD(cls,
-              data: pd.DataFrame,
-              quarter: int = 8,
-              net_profit_in: str = FISN.Net_Pro_In.value,
-              switch: bool = False):
-
+    def Growth019(cls,
+                  data: pd.DataFrame,
+                  quarter: int = 8,
+                  net_profit_in: str = FISN.Net_Pro_In.value,
+                  switch: bool = False):
+        """
+        净利润稳健加速度(NP_SD)
+        """
         func_name = sys._getframe().f_code.co_name
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
@@ -605,12 +278,14 @@ class FinancialGrowthFactor(FactorBase):
         return F
 
     @classmethod
-    def OP_Acc(cls,
-               data: pd.DataFrame,
-               quarter: int = 8,
-               operator_profit: str = FISN.Op_Pro.value,
-               switch: bool = False):
-
+    def Growth020(cls,
+                  data: pd.DataFrame,
+                  quarter: int = 8,
+                  operator_profit: str = FISN.Op_Pro.value,
+                  switch: bool = False):
+        """
+        营业利润加速度(OP_Acc)
+        """
         func_name = sys._getframe().f_code.co_name
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
@@ -636,12 +311,14 @@ class FinancialGrowthFactor(FactorBase):
         return F
 
     @classmethod
-    def OP_Stable(cls,
+    def Growth021(cls,
                   data: pd.DataFrame,
                   quarter: int = 8,
                   operator_profit: str = FISN.Op_Pro.value,
                   switch: bool = False):
-
+        """
+        营业利润稳健利润增速(OP_Stable)
+        """
         func_name = sys._getframe().f_code.co_name
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
@@ -669,12 +346,14 @@ class FinancialGrowthFactor(FactorBase):
         return F
 
     @classmethod
-    def OP_SD(cls,
-              data: pd.DataFrame,
-              quarter: int = 8,
-              operator_profit: str = FISN.Op_Pro.value,
-              switch: bool = False):
-
+    def Growth022(cls,
+                  data: pd.DataFrame,
+                  quarter: int = 8,
+                  operator_profit: str = FISN.Op_Pro.value,
+                  switch: bool = False):
+        """
+        营业利润稳健加速度(OP_SD)
+        """
         func_name = sys._getframe().f_code.co_name
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
@@ -706,12 +385,14 @@ class FinancialGrowthFactor(FactorBase):
         return F
 
     @classmethod
-    def OR_Acc(cls,
-               data: pd.DataFrame,
-               quarter: int = 8,
-               operator_income: str = FISN.Op_Income.value,
-               switch: bool = False):
-
+    def Growth023(cls,
+                  data: pd.DataFrame,
+                  quarter: int = 8,
+                  operator_income: str = FISN.Op_Income.value,
+                  switch: bool = False):
+        """
+        营业收入加速度(OR_Acc)
+        """
         func_name = sys._getframe().f_code.co_name
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
@@ -737,12 +418,14 @@ class FinancialGrowthFactor(FactorBase):
         return F
 
     @classmethod
-    def OR_Stable(cls,
+    def Growth024(cls,
                   data: pd.DataFrame,
                   quarter: int = 8,
                   operator_income: str = FISN.Op_Income.value,
                   switch: bool = False):
-
+        """
+        营业收入稳健利润增速(OR_Stable)
+        """
         func_name = sys._getframe().f_code.co_name
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
@@ -771,12 +454,14 @@ class FinancialGrowthFactor(FactorBase):
         return F
 
     @classmethod
-    def OR_SD(cls,
-              data: pd.DataFrame,
-              quarter: int = 8,
-              operator_income: str = FISN.Op_Income.value,
-              switch: bool = False):
-
+    def Growth025(cls,
+                  data: pd.DataFrame,
+                  quarter: int = 8,
+                  operator_income: str = FISN.Op_Income.value,
+                  switch: bool = False):
+        """
+        营业收入稳健加速度(OR_SD)
+        """
         func_name = sys._getframe().f_code.co_name
         data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
@@ -807,13 +492,445 @@ class FinancialGrowthFactor(FactorBase):
         return F
 
     @classmethod
-    def MAR_G(cls,
-              data: pd.DataFrame,
-              operator_income: str = FISN.Op_Income.value,
-              operator_cost: str = FISN.Op_Cost.value,
-              switch: bool = False):
+    def Growth027(cls,
+                  data: pd.DataFrame,
+                  liq_asset: str = FBSN.Liq_Asset.value,
+                  switch: bool = False):
         """
-        毛利润率 = （本期毛利润 – 上期毛利润）/ 上期营业收入
+        流动资产增长率(TTM)(LA_G_TTM)
+        """
+        func_name = sys._getframe().f_code.co_name
+        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        data.sort_index(inplace=True)
+
+        data["LA_G"] = data[liq_asset].groupby(KN.STOCK_ID.value, group_keys=False).rolling(4).mean()
+        data[func_name] = data["LA_G"].groupby(KN.STOCK_ID.value).apply(lambda x: x / x.shift(1) - 1)
+        data[func_name][np.isinf(data[func_name])] = np.nan  # 无限大值
+
+        if switch:
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
+        else:
+            data_fact = None
+
+        data = data.reset_index()
+
+        F = FactorInfo()
+        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
+        F.data = data_fact
+        F.factor_type = data['type'][0]
+        F.factor_category = cls().__class__.__name__
+        F.factor_name = func_name
+
+        return F
+
+    @classmethod
+    def Growth026(cls,
+                  data: pd.DataFrame,
+                  total_asset: str = FBSN.Total_Asset.value,
+                  quarter: int = 8,
+                  switch: bool = False):
+        """
+        总资产增长率波动率(TA_G_LR_std)
+        """
+        func_name = sys._getframe().f_code.co_name
+        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        data.sort_index(inplace=True)
+
+        data['TA_growth'] = data[total_asset].groupby(KN.STOCK_ID.value).apply(lambda x: x / x.shift(1) - 1)
+        data['TA_growth'][np.isinf(data['TA_growth'])] = np.nan  # 无限大值
+        data[func_name] = data['TA_growth'].groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(quarter).std())
+
+        if switch:
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
+        else:
+            data_fact = None
+
+        data = data.reset_index()
+
+        F = FactorInfo()
+        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
+        F.data = data_fact
+        F.factor_type = data['type'][0]
+        F.factor_category = cls().__class__.__name__
+        F.factor_name = func_name
+
+        return F
+
+    @classmethod
+    def Growth028(cls,
+                  data: pd.DataFrame,
+                  total_asset: str = FBSN.Total_Asset.value,
+                  switch: bool = False) -> FactorInfo:
+        """
+        总资产增长率(TA_G_LR)
+        """
+        func_name = sys._getframe().f_code.co_name
+        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        data.sort_index(inplace=True)
+
+        data[func_name] = data[total_asset].groupby(KN.STOCK_ID.value).apply(lambda x: x / x.shift(1) - 1)
+        data[func_name][np.isinf(data[func_name])] = np.nan  # 无限大值
+
+        if switch:
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
+        else:
+            data_fact = None
+
+        data = data.reset_index()
+
+        F = FactorInfo()
+        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
+        F.data = data_fact
+        F.factor_type = data['type'][0]
+        F.factor_category = cls().__class__.__name__
+        F.factor_name = func_name
+
+        return F
+
+    @classmethod
+    def Growth029(cls,
+                  data: pd.DataFrame,
+                  iliq_asset: str = FBSN.ILiq_Asset.value,
+                  switch: bool = False):
+        """
+        非流动资产增长率(ILA_G_LR)
+        """
+        func_name = sys._getframe().f_code.co_name
+        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        data.sort_index(inplace=True)
+
+        data[func_name] = data[iliq_asset].groupby(KN.STOCK_ID.value).apply(lambda x: x / x.shift(1) - 1)
+        data[func_name][np.isinf(data[func_name])] = np.nan
+
+        if switch:
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
+        else:
+            data_fact = None
+
+        data = data.reset_index()
+
+        F = FactorInfo()
+        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
+        F.data = data_fact
+        F.factor_type = data['type'][0]
+        F.factor_category = cls().__class__.__name__
+        F.factor_name = func_name
+
+        return F
+
+    @classmethod
+    def Growth031(cls,
+                  data: pd.DataFrame,
+                  iliq_asset: str = FBSN.ILiq_Asset.value,
+                  switch: bool = False):
+        """
+        非流动资产增长率(TTM)(ILA_G_TTM)
+        """
+        func_name = sys._getframe().f_code.co_name
+        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        data.sort_index(inplace=True)
+
+        data["ILA_G"] = data[iliq_asset].groupby(KN.STOCK_ID.value, group_keys=False).rolling(4).mean()
+        data[func_name] = data["ILA_G"].groupby(KN.STOCK_ID.value).apply(lambda x: x / x.shift(1) - 1)
+        data[func_name][np.isinf(data[func_name])] = np.nan
+
+        if switch:
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
+        else:
+            data_fact = None
+
+        data = data.reset_index()
+
+        F = FactorInfo()
+        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
+        F.data = data_fact
+        F.factor_type = data['type'][0]
+        F.factor_category = cls().__class__.__name__
+        F.factor_name = func_name
+
+        return F
+
+    @classmethod
+    def Growth032(cls,
+                  data: pd.DataFrame,
+                  total_asset: str = FBSN.Total_Asset.value,
+                  quarter: int = 8,
+                  switch: bool = False):
+        """
+        总资产增长率波动率(TTM)(TA_G_ttm_std)
+        """
+
+        func_name = sys._getframe().f_code.co_name
+        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        data.sort_index(inplace=True)
+
+        data["TA_ttm"] = data[total_asset].groupby(KN.STOCK_ID.value, group_keys=False).rolling(4).mean()
+        data['TA_growth'] = data["TA_ttm"].groupby(KN.STOCK_ID.value).apply(lambda x: x / x.shift(1) - 1)
+        data['TA_growth'][np.isinf(data['TA_growth'])] = np.nan  # 无限大值
+        data[func_name] = data['TA_growth'].groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(quarter).std())
+
+        if switch:
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
+        else:
+            data_fact = None
+
+        data = data.reset_index()
+
+        F = FactorInfo()
+        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
+        F.data = data_fact
+        F.factor_type = data['type'][0]
+        F.factor_category = cls().__class__.__name__
+        F.factor_name = func_name
+
+        return F
+
+    @classmethod
+    def Growth033(cls,
+                  data: pd.DataFrame,
+                  quarter: int = 8,
+                  iliq_asset: str = FBSN.ILiq_Asset.value,
+                  switch: bool = False):
+        """
+        非流动资产增长率波动率(TTM)(ILA_G_TTM_std)
+        """
+        func_name = sys._getframe().f_code.co_name
+        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        data.sort_index(inplace=True)
+
+        data["ILA_ttm"] = data[iliq_asset].groupby(KN.STOCK_ID.value, group_keys=False).rolling(4).mean()
+        data['ILA_growth'] = data["ILA_ttm"].groupby(KN.STOCK_ID.value).apply(lambda x: x / x.shift(1) - 1)
+        data['ILA_growth'][np.isinf(data['ILA_growth'])] = np.nan  # 无限大值
+
+        data[func_name] = data['ILA_growth'].groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(quarter).std())
+
+        if switch:
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
+        else:
+            data_fact = None
+
+        data = data.reset_index()
+
+        F = FactorInfo()
+        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
+        F.data = data_fact
+        F.factor_type = data['type'][0]
+        F.factor_category = cls().__class__.__name__
+        F.factor_name = func_name
+
+        return F
+
+    @classmethod
+    def Growth034(cls,
+                  data: pd.DataFrame,
+                  net_profit_ex: str = FISN.Net_Pro_Ex.value,
+                  switch: bool = False):
+        """
+        净利润增长率(NP_G) = (本期净利润 - 去年同期净利润) / ABS(去年同期净利润)
+        :param data:
+        :param net_profit_ex:
+        :param switch:
+        :return:
+        """
+        func_name = sys._getframe().f_code.co_name
+        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        data.sort_index(inplace=True)
+
+        data[func_name] = data.groupby(KN.STOCK_ID.value,
+                                       group_keys=False).apply(
+            lambda x: x[net_profit_ex].diff(4) / abs(x[net_profit_ex].shift(4)))
+
+        if switch:
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
+        else:
+            data_fact = None
+
+        data = data.reset_index()
+
+        F = FactorInfo()
+        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
+        F.data = data_fact
+        F.factor_type = data['type'][0]
+        F.factor_category = cls().__class__.__name__
+        F.factor_name = func_name
+
+        return F
+
+    @classmethod
+    def Growth035(cls,
+                  data: pd.DataFrame,
+                  operator_income: str = FISN.Op_Income.value,
+                  switch: bool = False):
+        """
+        主营业务收入增长率(MOper_G) = （本期主营业务收入 - 去年同期主营业务收入) / ABS(去年同期主营业务收入)
+        :param data:
+        :param operator_income:
+        :param switch:
+        :return:
+        """
+        func_name = sys._getframe().f_code.co_name
+        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        data.sort_index(inplace=True)
+
+        data[func_name] = data.groupby(KN.STOCK_ID.value,
+                                       group_keys=False).apply(
+            lambda x: x[operator_income].diff(4) / abs(x[operator_income].shift(4)))
+
+        if switch:
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
+        else:
+            data_fact = None
+
+        data = data.reset_index()
+
+        F = FactorInfo()
+        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
+        F.data = data_fact
+        F.factor_type = data['type'][0]
+        F.factor_category = cls().__class__.__name__
+        F.factor_name = func_name
+
+        return F
+
+    @classmethod
+    def Growth036(cls,
+                  data: pd.DataFrame,
+                  quarter: int = 8,
+                  liq_asset: str = FBSN.Liq_Asset.value,
+                  switch: bool = False):
+        """
+        流动资产增长率波动率(LA_G_LR_std)
+        """
+        func_name = sys._getframe().f_code.co_name
+        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        data.sort_index(inplace=True)
+
+        data['LA_growth'] = data[liq_asset].groupby(KN.STOCK_ID.value).apply(lambda x: x / x.shift(1) - 1)
+        data['LA_growth'][np.isinf(data['LA_growth'])] = np.nan  # 无限大值
+        data[func_name] = data['LA_growth'].groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(quarter).std())
+
+        if switch:
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
+        else:
+            data_fact = None
+
+        data = data.reset_index()
+
+        F = FactorInfo()
+        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
+        F.data = data_fact
+        F.factor_type = data['type'][0]
+        F.factor_category = cls().__class__.__name__
+        F.factor_name = func_name
+
+        return F
+
+    @classmethod
+    def Growth037(cls,
+                  data: pd.DataFrame,
+                  quarter: int = 8,
+                  liq_asset: str = FBSN.Liq_Asset.value,
+                  switch: bool = False):
+        """
+        流动资产增长率波动率(TTM)(LA_G_ttm_std)
+        """
+        func_name = sys._getframe().f_code.co_name
+        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        data.sort_index(inplace=True)
+
+        data["LA_ttm"] = data[liq_asset].groupby(KN.STOCK_ID.value, group_keys=False).rolling(4).mean()
+        data['LA_growth'] = data["LA_ttm"].groupby(KN.STOCK_ID.value).apply(lambda x: x / x.shift(1) - 1)
+        data['LA_growth'][np.isinf(data['LA_growth'])] = np.nan  # 无限大值
+        data[func_name] = data['LA_growth'].groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(quarter).std())
+
+        if switch:
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
+        else:
+            data_fact = None
+
+        data = data.reset_index()
+
+        F = FactorInfo()
+        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
+        F.data = data_fact
+        F.factor_type = data['type'][0]
+        F.factor_category = cls().__class__.__name__
+        F.factor_name = func_name
+
+        return F
+
+    @classmethod
+    def Growth038(cls,
+                  data: pd.DataFrame,
+                  quarter: int = 8,
+                  iliq_asset: str = FBSN.ILiq_Asset.value,
+                  switch: bool = False):
+        """
+        非流动资产增长率波动率(ILA_G_LR_std)
+        """
+        func_name = sys._getframe().f_code.co_name
+        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        data.sort_index(inplace=True)
+
+        data['ILA_growth'] = data[iliq_asset].groupby(KN.STOCK_ID.value).apply(lambda x: x / x.shift(1) - 1)
+        data['ILA_growth'][np.isinf(data['ILA_growth'])] = np.nan  # 无限大值
+        data[func_name] = data['ILA_growth'].groupby(KN.STOCK_ID.value).apply(lambda x: x.rolling(quarter).std())
+
+        if switch:
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
+        else:
+            data_fact = None
+
+        data = data.reset_index()
+
+        F = FactorInfo()
+        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
+        F.data = data_fact
+        F.factor_type = data['type'][0]
+        F.factor_category = cls().__class__.__name__
+        F.factor_name = func_name
+
+        return F
+
+    @classmethod
+    def Growth039(cls,
+                  data: pd.DataFrame,
+                  liq_asset: str = FBSN.Liq_Asset.value,
+                  switch: bool = False):
+        """
+        流动资产增长率(LA_G_LR)
+        """
+        func_name = sys._getframe().f_code.co_name
+        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        data.sort_index(inplace=True)
+
+        data[func_name] = data[liq_asset].groupby(KN.STOCK_ID.value).apply(lambda x: x / x.shift(1) - 1)
+        data[func_name][np.isinf(data[func_name])] = np.nan  # 无限大值
+
+        if switch:
+            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
+        else:
+            data_fact = None
+
+        data = data.reset_index()
+
+        F = FactorInfo()
+        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
+        F.data = data_fact
+        F.factor_type = data['type'][0]
+        F.factor_category = cls().__class__.__name__
+        F.factor_name = func_name
+
+        return F
+
+    @classmethod
+    def Growth041(cls,
+                  data: pd.DataFrame,
+                  operator_income: str = FISN.Op_Income.value,
+                  operator_cost: str = FISN.Op_Cost.value,
+                  switch: bool = False):
+        """
+        毛利润率(MAR_G) = （本期毛利润 – 上期毛利润）/ 上期营业收入
         :param data:
         :param operator_income:
         :param operator_cost:
@@ -847,84 +964,12 @@ class FinancialGrowthFactor(FactorBase):
 
         return F
 
-    @classmethod
-    def NP_G(cls,
-             data: pd.DataFrame,
-             net_profit_ex: str = FISN.Net_Pro_Ex.value,
-             switch: bool = False):
-        """
-        净利润增长率 = (本期净利润 - 去年同期净利润) / ABS(去年同期净利润)
-        :param data:
-        :param net_profit_ex:
-        :param switch:
-        :return:
-        """
-        func_name = sys._getframe().f_code.co_name
-        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
-        data.sort_index(inplace=True)
-
-        data[func_name] = data.groupby(KN.STOCK_ID.value,
-                                       group_keys=False).apply(
-            lambda x: x[net_profit_ex].diff(4) / abs(x[net_profit_ex].shift(4)))
-
-        if switch:
-            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
-        else:
-            data_fact = None
-
-        data = data.reset_index()
-
-        F = FactorInfo()
-        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
-        F.data = data_fact
-        F.factor_type = data['type'][0]
-        F.factor_category = cls().__class__.__name__
-        F.factor_name = func_name
-
-        return F
-
-    @classmethod
-    def MOper_G(cls,
-                data: pd.DataFrame,
-                operator_income: str = FISN.Op_Income.value,
-                switch: bool = False):
-        """
-        主营业务收入增长率 = （本期主营业务收入 - 去年同期主营业务收入) / ABS(去年同期主营业务收入)
-        :param data:
-        :param operator_income:
-        :param switch:
-        :return:
-        """
-        func_name = sys._getframe().f_code.co_name
-        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
-        data.sort_index(inplace=True)
-
-        data[func_name] = data.groupby(KN.STOCK_ID.value,
-                                       group_keys=False).apply(
-            lambda x: x[operator_income].diff(4) / abs(x[operator_income].shift(4)))
-
-        if switch:
-            data_fact = cls()._switch_freq(data_=data, name=func_name, limit=120)
-        else:
-            data_fact = None
-
-        data = data.reset_index()
-
-        F = FactorInfo()
-        F.data_raw = data[[SN.ANN_DATE.value, KN.STOCK_ID.value, SN.REPORT_DATE.value, func_name]]
-        F.data = data_fact
-        F.factor_type = data['type'][0]
-        F.factor_category = cls().__class__.__name__
-        F.factor_name = func_name
-
-        return F
-
     ####################################################################################################################
     @classmethod
-    def TA_G_LR_data_raw(cls,
-                         sta: int = 20130101,
-                         end: int = 20200401,
-                         f_type: str = '408001000'):
+    def Growth028_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
         sql_keys = {"BST": {"TOT_ASSETS": f"\"{FBSN.Total_Asset.value}\""}
                     }
 
@@ -938,18 +983,18 @@ class FinancialGrowthFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def TA_G_ttm_data_raw(cls,
-                          sta: int = 20130101,
-                          end: int = 20200401,
-                          f_type: str = '408001000'):
+    def Growth016_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
 
-        return cls.TA_G_LR_data_raw(sta, end, f_type)
+        return cls.Growth028_data_raw(sta, end, f_type)
 
     @classmethod
-    def LA_G_LR_data_raw(cls,
-                         sta: int = 20130101,
-                         end: int = 20200401,
-                         f_type: str = '408001000'):
+    def Growth039_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
         sql_keys = {"BST": {"TOT_CUR_ASSETS": f"\"{FBSN.Liq_Asset.value}\""}
                     }
 
@@ -963,17 +1008,17 @@ class FinancialGrowthFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def LA_G_ttm_data_raw(cls,
-                          sta: int = 20130101,
-                          end: int = 20200401,
-                          f_type: str = '408001000'):
-        return cls.LA_G_LR_data_raw(sta, end, f_type)
+    def Growth027_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
+        return cls.Growth039_data_raw(sta, end, f_type)
 
     @classmethod
-    def ILA_G_LR_data_raw(cls,
-                          sta: int = 20130101,
-                          end: int = 20200401,
-                          f_type: str = '408001000'):
+    def Growth029_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
         sql_keys = {"BST": {"TOT_NON_CUR_ASSETS": f"\"{FBSN.ILiq_Asset.value}\""}
                     }
 
@@ -988,59 +1033,59 @@ class FinancialGrowthFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def ILA_G_ttm_data_raw(cls,
+    def Growth031_data_raw(cls,
                            sta: int = 20130101,
                            end: int = 20200401,
                            f_type: str = '408001000'):
-        return cls.ILA_G_LR_data_raw(sta, end, f_type)
+        return cls.Growth029_data_raw(sta, end, f_type)
 
     @classmethod
-    def TA_G_LR_std_data_raw(cls,
-                             sta: int = 20130101,
-                             end: int = 20200401,
-                             f_type: str = '408001000'):
-        return cls.TA_G_LR_data_raw(sta, end, f_type)
+    def Growth026_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
+        return cls.Growth028_data_raw(sta, end, f_type)
 
     @classmethod
-    def TA_G_ttm_std_data_raw(cls,
-                              sta: int = 20130101,
-                              end: int = 20200401,
-                              f_type: str = '408001000'):
-        return cls.TA_G_LR_data_raw(sta, end, f_type)
+    def Growth032_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
+        return cls.Growth028_data_raw(sta, end, f_type)
 
     @classmethod
-    def LA_G_LR_std_data_raw(cls,
-                             sta: int = 20130101,
-                             end: int = 20200401,
-                             f_type: str = '408001000'):
-        return cls.LA_G_LR_data_raw(sta, end, f_type)
+    def Growth036_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
+        return cls.Growth039_data_raw(sta, end, f_type)
 
     @classmethod
-    def LA_G_ttm_std_data_raw(cls,
-                              sta: int = 20130101,
-                              end: int = 20200401,
-                              f_type: str = '408001000'):
-        return cls.LA_G_LR_data_raw(sta, end, f_type)
+    def Growth037_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
+        return cls.Growth039_data_raw(sta, end, f_type)
 
     @classmethod
-    def ILA_G_LR_std_data_raw(cls,
-                              sta: int = 20130101,
-                              end: int = 20200401,
-                              f_type: str = '408001000'):
-        return cls.ILA_G_LR_data_raw(sta, end, f_type)
+    def Growth038_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
+        return cls.Growth029_data_raw(sta, end, f_type)
 
     @classmethod
-    def ILA_G_ttm_std_data_raw(cls,
-                               sta: int = 20130101,
-                               end: int = 20200401,
-                               f_type: str = '408001000'):
-        return cls.ILA_G_LR_data_raw(sta, end, f_type)
+    def Growth033_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
+        return cls.Growth029_data_raw(sta, end, f_type)
 
     @classmethod
-    def NP_Acc_data_raw(cls,
-                        sta: int = 20130101,
-                        end: int = 20200401,
-                        f_type: str = '408001000'):
+    def Growth017_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
 
         sql_keys = {"IST": {"NET_PROFIT_INCL_MIN_INT_INC": f"\"{FISN.Net_Pro_In.value}\""}
                     }
@@ -1059,24 +1104,24 @@ class FinancialGrowthFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def NP_Stable_data_raw(cls,
+    def Growth018_data_raw(cls,
                            sta: int = 20130101,
                            end: int = 20200401,
                            f_type: str = '408001000'):
-        return cls.NP_Acc_data_raw(sta, end, f_type)
+        return cls.Growth017_data_raw(sta, end, f_type)
 
     @classmethod
-    def NP_SD_data_raw(cls,
-                       sta: int = 20130101,
-                       end: int = 20200401,
-                       f_type: str = '408001000'):
-        return cls.NP_Acc_data_raw(sta, end, f_type)
+    def Growth019_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
+        return cls.Growth017_data_raw(sta, end, f_type)
 
     @classmethod
-    def OP_Acc_data_raw(cls,
-                        sta: int = 20130101,
-                        end: int = 20200401,
-                        f_type: str = '408001000'):
+    def Growth020_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
 
         sql_keys = {"IST": {"OPER_REV": f"\"{FISN.Op_Pro.value}\""}
                     }
@@ -1093,24 +1138,24 @@ class FinancialGrowthFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def OP_Stable_data_raw(cls,
+    def Growth021_data_raw(cls,
                            sta: int = 20130101,
                            end: int = 20200401,
                            f_type: str = '408001000'):
-        return cls.OP_Acc_data_raw(sta, end, f_type)
+        return cls.Growth020_data_raw(sta, end, f_type)
 
     @classmethod
-    def OP_SD_data_raw(cls,
-                       sta: int = 20130101,
-                       end: int = 20200401,
-                       f_type: str = '408001000'):
-        return cls.OP_Acc_data_raw(sta, end, f_type)
+    def Growth022_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
+        return cls.Growth020_data_raw(sta, end, f_type)
 
     @classmethod
-    def OR_Acc_data_raw(cls,
-                        sta: int = 20130101,
-                        end: int = 20200401,
-                        f_type: str = '408001000'):
+    def Growth023_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
 
         sql_keys = {"IST": {"OPER_PROFIT": f"\"{FISN.Op_Income.value}\""}
                     }
@@ -1127,24 +1172,24 @@ class FinancialGrowthFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def OR_Stable_data_raw(cls,
+    def Growth024_data_raw(cls,
                            sta: int = 20130101,
                            end: int = 20200401,
                            f_type: str = '408001000'):
-        return cls.OR_Acc_data_raw(sta, end, f_type)
+        return cls.Growth023_data_raw(sta, end, f_type)
 
     @classmethod
-    def OR_SD_data_raw(cls,
-                       sta: int = 20130101,
-                       end: int = 20200401,
-                       f_type: str = '408001000'):
-        return cls.OR_Acc_data_raw(sta, end, f_type)
+    def Growth025_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
+        return cls.Growth023_data_raw(sta, end, f_type)
 
     @classmethod
-    def BPS_G_LR_data_raw(cls,
-                          sta: int = 20130101,
-                          end: int = 20200401,
-                          f_type: str = '408001000'):
+    def Growth013_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
         sql_keys = {"BST": {"TOT_SHRHLDR_EQY_INCL_MIN_INT": f"\"{FBSN.Net_Asset_In.value}\"",
                             "TOT_SHR": f"\"{FBSN.Actual_Capital.value}\""},
                     }
@@ -1158,7 +1203,7 @@ class FinancialGrowthFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def EPS_G_ttm_data_raw(cls,
+    def Growth014_data_raw(cls,
                            sta: int = 20130101,
                            end: int = 20200401,
                            f_type: str = '408001000'
@@ -1185,7 +1230,7 @@ class FinancialGrowthFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def ROA_G_ttm_data_raw(cls,
+    def Growth015_data_raw(cls,
                            sta: int = 20130101,
                            end: int = 20200401,
                            f_type: str = '408001000'):
@@ -1215,10 +1260,10 @@ class FinancialGrowthFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def MAR_G_data_raw(cls,
-                       sta: int = 20130101,
-                       end: int = 20200401,
-                       f_type: str = '408001000'):
+    def Growth041_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
         sql_keys = {"IST": {"OPER_REV": f"\"{FISN.Op_Income.value}\"",
                             "LESS_OPER_COST": f"\"{FISN.Op_Cost.value}\""}
                     }
@@ -1240,10 +1285,10 @@ class FinancialGrowthFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def NP_G_data_raw(cls,
-                      sta: int = 20130101,
-                      end: int = 20200401,
-                      f_type: str = '408001000'):
+    def Growth034_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
         sql_keys = {"IST": {"NET_PROFIT_EXCL_MIN_INT_INC": f"\"{FISN.Net_Pro_Ex.value}\""}
                     }
         sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
@@ -1256,10 +1301,10 @@ class FinancialGrowthFactor(FactorBase):
         return financial_data
 
     @classmethod
-    def MOper_G_data_raw(cls,
-                         sta: int = 20130101,
-                         end: int = 20200401,
-                         f_type: str = '408001000'):
+    def Growth035_data_raw(cls,
+                           sta: int = 20130101,
+                           end: int = 20200401,
+                           f_type: str = '408001000'):
         sql_keys = {"IST": {"OPER_REV": f"\"{FISN.Op_Income.value}\""}
                     }
 
