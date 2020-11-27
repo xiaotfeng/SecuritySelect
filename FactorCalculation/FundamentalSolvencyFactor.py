@@ -22,7 +22,7 @@ class FundamentalSolvencyFactor(FactorBase):
     """408001000: 合并报表； 408006000：母公司报表 """
 
     def __init__(self):
-        super(FinancialSolvencyFactor, self).__init__()
+        super(FundamentalSolvencyFactor, self).__init__()
 
     @classmethod
     def Solvency006(cls,

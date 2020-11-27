@@ -13,10 +13,10 @@ from constant import (
 )
 
 
-class MomentFactor(FactorBase):
+class TechnicalMomentFactor(FactorBase):
 
     def __init__(self):
-        super(MomentFactor, self).__init__()
+        super(TechnicalMomentFactor, self).__init__()
 
     @classmethod
     def Momentum006(cls,
@@ -568,6 +568,9 @@ class MomentFactor(FactorBase):
                     data: pd.DataFrame,
                     close_price: str = PVN.CLOSE.value,
                     n: int = 1) -> FactorInfo:
+        """
+        收益率rank标准差(MTM_RankPrice_std)
+        """
         factor_name = sys._getframe().f_code.co_name + f'_{n}'
         data.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
@@ -589,7 +592,9 @@ class MomentFactor(FactorBase):
                     data: pd.DataFrame,
                     close_price: str = PVN.CLOSE.value,
                     n: int = 1) -> FactorInfo:
-
+        """
+        收益率标准差(MTM_RankRet_std)
+        """
         factor_name = sys._getframe().f_code.co_name + f'_{n}'
         data.set_index([KN.TRADE_DATE.value, KN.STOCK_ID.value], inplace=True)
         data.sort_index(inplace=True)
@@ -610,7 +615,7 @@ class MomentFactor(FactorBase):
     @classmethod
     def Momentum006_data_raw(cls) -> pd.DataFrame:
         """最高价格因子(HPTP)"""
-        data = cls()._csv_data([PVN.CLOSE.value, PVN.ADJ_FACTOR.value], 'FactorPool1')
+        data = cls()._csv_data(data_name=[PVN.CLOSE.value, PVN.ADJ_FACTOR.value], file_name='FactorPool1')
         data[PVN.CLOSE.value] = data[PVN.CLOSE.value] * data[PVN.ADJ_FACTOR.value]
         return data
 
@@ -625,10 +630,14 @@ class MomentFactor(FactorBase):
         return cls.Momentum006_data_raw()
 
     @classmethod
-    def Momentum009_data_raw(cls, index_name: str = '881001.WI') -> pd.DataFrame:
+    def Momentum009_data_raw(cls,
+                             index_name: str = '881001.WI') -> pd.DataFrame:
         """市场alpha因子"""
-        data_stock = cls()._csv_data([PVN.CLOSE.value, PVN.ADJ_FACTOR.value], 'FactorPool1')
-        data_index = cls().csv_index([PVN.CLOSE.value], 'IndexPrice', index_name)
+        data_stock = cls()._csv_data(data_name=[PVN.CLOSE.value, PVN.ADJ_FACTOR.value],
+                                     file_name='FactorPool1')
+        data_index = cls().csv_index(data_name=[PVN.CLOSE.value],
+                                     file_name='IndexPrice',
+                                     index_name=index_name)
 
         data_stock[PVN.CLOSE.value] = data_stock[PVN.CLOSE.value] * data_stock[PVN.ADJ_FACTOR.value]
         data_index.rename(columns={'close': 'index_close'}, inplace=True)
@@ -659,7 +668,7 @@ class MomentFactor(FactorBase):
     @classmethod
     def Momentum014_data_raw(cls) -> pd.DataFrame:
         """动量CTO收益率均值"""
-        data = cls()._csv_data([PVN.CLOSE.value, PVN.OPEN.value, PVN.ADJ_FACTOR.value], 'FactorPool1')
+        data = cls()._csv_data(data_name=[PVN.CLOSE.value, PVN.OPEN.value, PVN.ADJ_FACTOR.value], file_name='FactorPool1')
         data[[PVN.CLOSE.value, PVN.OPEN.value]] = \
             data[[PVN.CLOSE.value, PVN.OPEN.value]].mul(data[PVN.ADJ_FACTOR.value], axis=0)
         return data
@@ -667,7 +676,7 @@ class MomentFactor(FactorBase):
     @classmethod
     def Momentum015_data_raw(cls) -> pd.DataFrame:
         """动量CTL收益率均值"""
-        data = cls()._csv_data([PVN.CLOSE.value, PVN.LOW.value, PVN.ADJ_FACTOR.value], 'FactorPool1')
+        data = cls()._csv_data(data_name=[PVN.CLOSE.value, PVN.LOW.value, PVN.ADJ_FACTOR.value], file_name='FactorPool1')
         data[[PVN.CLOSE.value, PVN.LOW.value]] = \
             data[[PVN.CLOSE.value, PVN.LOW.value]].mul(data[PVN.ADJ_FACTOR.value], axis=0)
         return data
@@ -675,7 +684,7 @@ class MomentFactor(FactorBase):
     @classmethod
     def Momentum016_data_raw(cls) -> pd.DataFrame:
         """动量CTH收益率均值"""
-        data = cls()._csv_data([PVN.CLOSE.value, PVN.HIGH.value, PVN.ADJ_FACTOR.value], 'FactorPool1')
+        data = cls()._csv_data(data_name=[PVN.CLOSE.value, PVN.HIGH.value, PVN.ADJ_FACTOR.value], file_name='FactorPool1')
         data[[PVN.CLOSE.value, PVN.HIGH.value]] = \
             data[[PVN.CLOSE.value, PVN.HIGH.value]].mul(data[PVN.ADJ_FACTOR.value], axis=0)
         return data
@@ -688,8 +697,8 @@ class MomentFactor(FactorBase):
     @classmethod
     def Momentum018_data_raw(cls) -> pd.DataFrame:
         """动量CTHL收益率均值"""
-        data = cls()._csv_data([PVN.CLOSE.value, PVN.HIGH.value, PVN.LOW.value, PVN.OPEN.value, PVN.ADJ_FACTOR.value],
-                               'FactorPool1')
+        data = cls()._csv_data(data_name=[PVN.CLOSE.value, PVN.HIGH.value, PVN.LOW.value, PVN.OPEN.value, PVN.ADJ_FACTOR.value],
+                               file_name='FactorPool1')
         data[[PVN.CLOSE.value, PVN.HIGH.value, PVN.LOW.value, PVN.OPEN.value]] = \
             data[[PVN.CLOSE.value, PVN.HIGH.value, PVN.LOW.value, PVN.OPEN.value]].mul(data[PVN.ADJ_FACTOR.value],
                                                                                        axis=0)
@@ -731,11 +740,13 @@ class MomentFactor(FactorBase):
         return cls.Momentum016_data_raw()
 
     @classmethod
-    def Momentum026_data_raw(cls):
+    def Momentum026_data_raw(cls) -> pd.DataFrame:
+        """收益率rank标准差"""
         return cls.Momentum006_data_raw()
 
     @classmethod
-    def Momentum027_data_raw(cls):
+    def Momentum027_data_raw(cls) ->pd.DataFrame:
+        """收益率标准差"""
         return cls.Momentum006_data_raw()
 
     @staticmethod

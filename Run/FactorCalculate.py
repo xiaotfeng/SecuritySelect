@@ -16,19 +16,17 @@ DATABASE_NAME = {"Group": "分组数据保存",
 
 
 # 因子计算存储
-def cal_factor(params_dict: dict, db_name: str):
+def cal_factor(params_dict: dict):
     A = FactorValidityCheck()
 
-    factor_category = params_dict['factor_category']
     factor_name = params_dict['factor_name']
     factor_params = params_dict['factor_params']
 
     A.load_factor(fact_name=factor_name,
                   factor_params=factor_params,
-                  db_name=db_name,
                   cal=params_dict['cal'])
 
-    A.factor_to_sql(db_name, folder_name=factor_category, save_type=params_dict['save_type'])
+    A.factor_to_csv()
 
 
 def main():
@@ -70,34 +68,36 @@ def main():
     pass
 
 
-def main1():
-    factor = 'ROA_ttm_T'
-    factor_category = FCN.Pro.value
-    print(f"开始计算{factor}因子")
-    factor_dict = {"factor_category": factor_category,
-                   "factor_name": factor,
-                   "factor_params": {"switch": False},
+def main1(factor):
+
+    factor_dict = {"factor_name": factor,
+                   "factor_params": {},
                    'factor': None,
-                   'cal': True,
-                   'save_type': 'raw'  # 保存原始因子数据， switch:保留频率转换后的数据
+                   'cal': True
                    }
 
+    # print(f"\033[1;31m{dt.datetime.now().strftime('%X')}: "
+    #       f"{factor_dict['factor_name']}-{factor_dict['factor_params']['n']}\033[0m")
     print(f"\033[1;31m{dt.datetime.now().strftime('%X')}: {factor_dict['factor_name']}\033[0m")
-    db = 'Fin'
-    cal_factor(factor_dict, db)
+    cal_factor(factor_dict)
 
-    factor_dict = {"factor_category": factor_category,
-                   "factor_name": factor,
-                   "factor_params": {"switch": True},
-                   'factor': None,
-                   'cal': True,
-                   'save_type': 'switch'  # 保存原始因子数据， switch:保留频率转换后的数据
-                   }
-
-    print(f"\033[1;31m{dt.datetime.now().strftime('%X')}: {factor_dict['factor_name']}\033[0m")
-    db = 'Fin'
-    cal_factor(factor_dict, db)
+    # factor_dict = {"factor_category": factor_category,
+    #                "factor_name": factor,
+    #                "factor_params": {},
+    #                'factor': None,
+    #                'cal': True,
+    #                'save_type': 'switch'  # 保存原始因子数据， switch:保留频率转换后的数据
+    #                }
+    #
+    # print(f"\033[1;31m{dt.datetime.now().strftime('%X')}: {factor_dict['factor_name']}\033[0m")
+    # db = 'Fin'
+    # cal_factor(factor_dict, db)
 
 
 if __name__ == '__main__':
-    main1()
+    # for i in range(6, 28):
+    #     if i in [10, 11]:
+    #         continue
+    #     factor = 'Momentum{:0>3}'.format(i)
+    factor = 'HighFreq078'
+    main1(factor)

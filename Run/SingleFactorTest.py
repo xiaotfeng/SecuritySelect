@@ -41,14 +41,14 @@ def Single_factor_test(params: dict,
     A.integration(**process)
 
     # Factor validity test
-    A.effectiveness(ret_period=hp,
+    A.effectiveness(hp=hp,
                     save=save)
     print('Stop')
 
 
 def main1():
     # factor_name = 'Alpha_501'  # ROA_G_ttm
-    for i in ["EP_LR", "ROE_Q_avg_deducted", "ROA_Q_avg","Sales_G_Q_LR", "EPS_G_TTM", "currentdebttodebt"]:
+    for i in ["EP_LR", "ROE_Q_avg_deducted", "ROA_Q_avg", "Sales_G_Q_LR", "EPS_G_TTM", "currentdebttodebt"]:
         df = pd.read_csv(f"A:\\数据\\{i}.csv")
 
         # df_.set_index(['date', 'stock_id'], inplace=True)
@@ -74,30 +74,47 @@ def main1():
     pass
 
 
-def main2():
-    factor_name = 'ROA_ttm_T'  # ROA_G_ttm
-
+def main2(factor_name, hp, save: bool = False):
     fact_value = None
 
     factor_p = {"fact_name": factor_name,
-                "factor_params": {"switch": True},
-                'db': 'Fin',
+                "factor_params": {"x_min": 60},
+                'db': 'HFD',
                 'factor_value': fact_value,
                 'cal': True}
 
     factor_process = {"outliers": '',  # mad
                       "neu": '',  # mv+industry
-                      "stand": 'mv',  # mv
+                      "stand": '',  # mv
                       "switch_freq": False,
                       "limit": 120}
+    # factor_process1 = {"outliers": 'mad',  # mad
+    #                    "neu": 'mv+industry',  # mv+industry
+    #                    "stand": 'mv',  # mv
+    #                    "switch_freq": False,
+    #                    "limit": 120}
 
-    print(f"\033[1;31m{dt.datetime.now().strftime('%X')}: {factor_name}\033[0m")
-
+    # print(f"\033[1;31m{dt.datetime.now().strftime('%X')}: "
+    #       f"{factor_name}-{factor_p['factor_params']['n']}-{hp}days\033[0m")
+    print(f"\033[1;31m{dt.datetime.now().strftime('%X')}: {factor_name}-{hp}days\033[0m")
     Single_factor_test(params=factor_p,
                        process=factor_process,
-                       hp=6,
-                       save=True)
+                       hp=hp,
+                       save=save)
+
+    # Single_factor_test(params=factor_p,
+    #                    process=factor_process1,
+    #                    hp=hp,
+    #                    save=save)
 
 
 if __name__ == '__main__':
-    main1()
+    # for i in range(6, 28):
+    #     if i in [10, 11]:
+    #         continue
+    #     factor = 'Momentum{:0>3}'.format(i)
+    #     main2(factor, 1)
+
+    factor = 'HighFreq037'
+    main2(factor, hp=5, save=False)
+

@@ -8,7 +8,6 @@ class LiquidationFactor(object):
     流动性因子
     """
 
-
     def turnover(self,
                  data: pd.DataFrame,
                  amount_name: str = 'amount',

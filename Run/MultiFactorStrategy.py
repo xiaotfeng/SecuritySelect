@@ -117,7 +117,7 @@ class GetData(object):
         # adj price
         price_data[price] = price_data[price].mul(price_data[PVN.ADJ_FACTOR.value], axis=0)
         stock_return = self.LP.stock_return(price_data, return_type=price, label=True)
-        stock_return.name = PVN.STOCK_RETURN.value
+        stock_return.name = KN.STOCK_RETURN.value
         return stock_return
 
     # 行业标识
@@ -578,16 +578,16 @@ class Strategy(object):
         columns_ef = data_copy.count()[data_copy.count() > data_copy.shape[0] / 2].index  # 过滤样本不足因子
         data_copy = data_copy[columns_ef].dropna()  # 个股数据不足剔除
 
-        if not {PVN.LIQ_MV.value, PVN.STOCK_RETURN.value, SN.INDUSTRY_FLAG.value}.issubset(columns_ef) \
-                or {PVN.LIQ_MV.value, PVN.STOCK_RETURN.value, SN.INDUSTRY_FLAG.value}.issuperset(columns_ef) \
+        if not {PVN.LIQ_MV.value, KN.STOCK_RETURN.value, SN.INDUSTRY_FLAG.value}.issubset(columns_ef) \
+                or {PVN.LIQ_MV.value, KN.STOCK_RETURN.value, SN.INDUSTRY_FLAG.value}.issuperset(columns_ef) \
                 or data_copy.shape[0] <= sample_length:
             res = type('res', (object,), dict(params=pd.Series(index=self.fact_name)))
         else:
             X = pd.get_dummies(
-                data_copy.loc[:, data_copy.columns.difference([PVN.LIQ_MV.value, PVN.STOCK_RETURN.value])],
+                data_copy.loc[:, data_copy.columns.difference([PVN.LIQ_MV.value, KN.STOCK_RETURN.value])],
                 columns=[SN.INDUSTRY_FLAG.value], prefix='', prefix_sep='')
 
-            Y = data_copy[PVN.STOCK_RETURN.value]
+            Y = data_copy[KN.STOCK_RETURN.value]
 
             W = data_copy[PVN.LIQ_MV.value]
 

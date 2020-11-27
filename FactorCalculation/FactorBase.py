@@ -6,11 +6,10 @@
 import pandas as pd
 import numpy as np
 import os
-import sys
 import copy
+from typing import Callable, Dict, Any
 
 from Data.GetData import SQL
-from Object import FactorInfo
 from constant import (
     KeyName as KN,
     SpecialName as SN,
@@ -77,16 +76,55 @@ class FactorBase(object):
             res.drop(columns='index', inplace=True)
         return res
 
-    def _csv_data(self, data_name: list, file_name: str = "FactorPool1", ):
-        res = pd.read_csv(os.path.join(FPN.factor_inputData.value, file_name + '.csv'),
-                          usecols=[KN.TRADE_DATE.value, KN.STOCK_ID.value] + data_name)
+    # 读取因子计算所需常用数据
+    def _csv_data(self,
+                  data_name: list,
+                  file_path: str = FPN.factor_inputData.value,
+                  file_name: str = "FactorPool1",
+                  date: str = KN.TRADE_DATE.value,
+                  stock_id: str = KN.STOCK_ID.value):
+        res = pd.read_csv(os.path.join(file_path, file_name + '.csv'),
+                          usecols=[date, stock_id] + data_name)
         return res
 
-    def csv_index(self, data_name: list, file_name: str = 'IndexPrice', index_name: str = ''):
-        index_data = pd.read_csv(os.path.join(FPN.factor_inputData.value, file_name + '.csv'),
-                                 usecols=[KN.TRADE_DATE.value, 'index_name'] + data_name)
+    # 读取指数数据
+    def csv_index(self,
+                  data_name: list,
+                  file_path: str = FPN.factor_inputData.value,
+                  file_name: str = 'IndexInfo',
+                  index_name: str = '',
+                  date: str = KN.TRADE_DATE.value,):
+        index_data = pd.read_csv(os.path.join(file_path, file_name + '.csv'),
+                                 usecols=[date, 'index_name'] + data_name)
         res = index_data[index_data['index_name'] == index_name]
         return res
+
+    # 读取分钟数据(数据不在一个文件夹中)，返回回调函数结果
+    def csv_HFD_data(self,
+                     data_name: list,
+                     func: Callable = None,
+                     file_path: str = FPN.HFD_Stock_M.value,
+                     sub_file: str = '') -> Dict[str, Any]:
+        Path = file_path if sub_file == '' else os.path.join(file_path, sub_file)
+        data_dict = {}
+        file_names = os.listdir(Path)
+
+        i = 1
+        for file_name in file_names:
+            i += 1
+            if file_name[-3:] == 'csv':
+                try:
+                    data_df = pd.read_csv(os.path.join(Path, file_name), usecols=['code', 'time'] + data_name)
+                except Exception as e:
+                    continue
+                data_df['date'] = file_name[:-4]
+                data_df.rename(columns={'code': 'stock_id'}, inplace=True)
+                res = func(data_df)
+                data_dict[file_name[:-4]] = res
+            if i == 2:
+                break
+
+        return data_dict
 
     def _switch_ttm(self, data_: pd.DataFrame, name: str):
         """
@@ -109,3 +147,8 @@ class FactorBase(object):
         res.index = res.index.swaplevel(0, 1)
         res.name = name
         return res
+
+
+if __name__ == '__main__':
+    A = FactorBase()
+    A.csv_HFD_data()

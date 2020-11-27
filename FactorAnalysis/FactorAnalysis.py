@@ -226,7 +226,7 @@ class FactorValidityCheck(object):
             # self.db.query_factor_data("EP_ttm", "Fin")
             if kwargs['cal']:
                 try:
-                    fact_raw_data = self.Factor.factor[fact_name + '_data_raw']()  # TODO
+                    fact_raw_data = self.Factor.factor[fact_name + '_data_raw'](**kwargs['factor_params'])  # TODO
                     self.data_input["factor_raw_data"] = fact_raw_data
                 except Exception as e:
                     print(e)
@@ -817,22 +817,26 @@ class FactorValidityCheck(object):
         ind_year.xs('ret_a', level=1).plot.bar(rot=0,
                                                ax=ax3,
                                                label='return',
-                                               title=f'{self.fact_name}: group return-{self.neu}')
+                                               title=f'{self.fact_name}: group return-{self.neu}',
+                                               legend=False)
         ax4 = fig.add_subplot(3, 2, 4)
         ind_year.xs('std_a', level=1).plot.bar(rot=0,
                                                ax=ax4,
                                                label='std',
-                                               title=f'{self.fact_name}: group return std-{self.neu}')
+                                               title=f'{self.fact_name}: group return std-{self.neu}',
+                                               legend=False)
         ax5 = fig.add_subplot(3, 2, 5)
         ind_year.xs('shape_a', level=1).plot.bar(rot=0,
                                                  ax=ax5,
                                                  label='shape_a',
-                                                 title=f'{self.fact_name}: group shape ratio-{self.neu}')
+                                                 title=f'{self.fact_name}: group shape ratio-{self.neu}',
+                                                 legend=False)
         ax6 = fig.add_subplot(3, 2, 6)
         ind_year.xs('max_retreat', level=1).plot.bar(rot=0,
                                                      ax=ax6,
                                                      label='max_retreat',
-                                                     title=f'{self.fact_name}: group max retreat-{self.neu}')
+                                                     title=f'{self.fact_name}: group max retreat-{self.neu}',
+                                                     legend=False)
 
         # save nav result figure
         if kwargs['save']:

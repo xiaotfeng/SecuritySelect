@@ -30,6 +30,11 @@ class FilePathName(Enum):
     Trade_Date = 'A:\\DataBase\\TradeDate'  # 交易日
     List_Date = 'A:\\DataBase\\ListDate'  # 成立日
 
+    HFD_Stock_M = 'Y:\\合成数据\\逐笔1min\\逐笔1min'  # 高频分钟数据
+    HFD_Stock_Depth = 'Y:\\合成数据\\十档Vwap'  # 高频十档盘口数据
+    HFD_Stock_CF = 'Y:\\合成数据\\逐笔资金流向'  # 逐笔资金流向
+    HFD = 'A:\\DataBase\\HFD'  # 高频数据存储地址
+
 
 @unique
 class KeyName(Enum):

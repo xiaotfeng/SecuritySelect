@@ -2,19 +2,32 @@ import pandas as pd
 import numpy as np
 import sys
 
+from FactorCalculation.FactorBase import FactorBase
+from Object import FactorInfo
 
-class MarketValueFactor(object):
+from constant import (
+    KeyName as KN,
+    SpecialName as SN,
+    PriceVolumeName as PVN
+)
 
-    def liquidity_market_value(self,
-                               data: pd.DataFrame,
-                               market_name: str = 'mv'):
+
+class TechnicalSizeFactor(FactorBase):
+
+    @classmethod
+    def Size001(cls,
+                data: pd.DataFrame,
+                liq_mv: str = PVN.LIQ_MV.value):
         """
-        流动市值对数
+        流动市值
         :return:
         """
-        factor_name = sys._getframe().f_code.co_name
-        data[factor_name] = np.log(data[market_name])
-        result = data[['code', factor_name]]
+        func_name = sys._getframe().f_code.co_name
+        data.set_index([SN.REPORT_DATE.value, KN.STOCK_ID.value], inplace=True)
+        data.sort_index(inplace=True)
+
+        data[func_name] = data[liq_mv]
+        result = data[['code', func_name]]
         return result
 
     def total_market_value(self,
@@ -28,6 +41,13 @@ class MarketValueFactor(object):
         data[factor_name] = np.log(data[market_name])
         result = data[['code', factor_name]]
         return result
+
+    @classmethod
+    def Size001_data_raw(cls,
+                         sta: int = 20130101,
+                         end: int = 20200401):
+        price_data = cls()._csv_data(data_name=[PVN.LIQ_MV.value])
+        return price_data
 
 
 if __name__ == '__main__':

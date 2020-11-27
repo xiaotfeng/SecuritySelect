@@ -501,7 +501,7 @@ class FundamentalValueFactor(FactorBase):
 
         sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
         financial_data = cls().Q.query(sql_)
-        price_data = cls()._csv_data([PVN.TOTAL_MV.value])
+        price_data = cls()._csv_data(data_name=[PVN.TOTAL_MV.value])
 
         # 过滤未上市公司
         data_ = pd.merge(financial_data, cls().list_date, on=[KN.STOCK_ID.value], how='left')
@@ -528,7 +528,7 @@ class FundamentalValueFactor(FactorBase):
 
         sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
         financial_data = cls().Q.query(sql_)
-        price_data = cls()._csv_data([PVN.TOTAL_MV.value])
+        price_data = cls()._csv_data(data_name=[PVN.TOTAL_MV.value])
 
         # 过滤未上市公司
         data_ = pd.merge(financial_data, cls().list_date, on=[KN.STOCK_ID.value], how='left')
@@ -560,7 +560,7 @@ class FundamentalValueFactor(FactorBase):
 
         sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
         financial_data = cls().Q.query(sql_)
-        price_data = cls()._csv_data([PVN.TOTAL_MV.value])
+        price_data = cls()._csv_data(data_name=[PVN.TOTAL_MV.value])
 
         # 过滤未上市公司
         data_ = pd.merge(financial_data, cls().list_date, on=[KN.STOCK_ID.value], how='left')
@@ -592,7 +592,7 @@ class FundamentalValueFactor(FactorBase):
 
         sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
         financial_data = cls().Q.query(sql_)
-        price_data = cls()._csv_data([PVN.TOTAL_MV.value])
+        price_data = cls()._csv_data(data_name=[PVN.TOTAL_MV.value])
 
         # 过滤未上市公司
         data_ = pd.merge(financial_data, cls().list_date, on=[KN.STOCK_ID.value], how='left')
@@ -624,7 +624,7 @@ class FundamentalValueFactor(FactorBase):
 
         sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
         financial_data = cls().Q.query(sql_)
-        price_data = cls()._csv_data([PVN.TOTAL_MV.value])
+        price_data = cls()._csv_data(data_name=[PVN.TOTAL_MV.value])
 
         # 过滤未上市公司
         data_ = pd.merge(financial_data, cls().list_date, on=[KN.STOCK_ID.value], how='left')
@@ -657,7 +657,7 @@ class FundamentalValueFactor(FactorBase):
 
         sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
         financial_data = cls().Q.query(sql_)
-        price_data = cls()._csv_data([PVN.TOTAL_MV.value])
+        price_data = cls()._csv_data(data_name=[PVN.TOTAL_MV.value])
 
         # 过滤未上市公司
         data_ = pd.merge(financial_data, cls().list_date, on=[KN.STOCK_ID.value], how='left')
@@ -689,7 +689,7 @@ class FundamentalValueFactor(FactorBase):
 
         sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
         financial_data = cls().Q.query(sql_)
-        price_data = cls()._csv_data([PVN.TOTAL_MV.value])
+        price_data = cls()._csv_data(data_name=[PVN.TOTAL_MV.value])
 
         # 过滤未上市公司
         data_ = pd.merge(financial_data, cls().list_date, on=[KN.STOCK_ID.value], how='left')
@@ -716,7 +716,7 @@ class FundamentalValueFactor(FactorBase):
 
         sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
         financial_data = cls().Q.query(sql_)
-        price_data = cls()._csv_data([PVN.TOTAL_MV.value])
+        price_data = cls()._csv_data(data_name=[PVN.TOTAL_MV.value])
 
         # 过滤未上市公司
         data_ = pd.merge(financial_data, cls().list_date, on=[KN.STOCK_ID.value], how='left')
@@ -751,7 +751,7 @@ class FundamentalValueFactor(FactorBase):
 
         sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
         financial_data = cls().Q.query(sql_)
-        price_data = cls()._csv_data([PVN.TOTAL_MV.value])
+        price_data = cls()._csv_data(data_name=[PVN.TOTAL_MV.value])
 
         # 过滤未上市公司
         data_ = pd.merge(financial_data, cls().list_date, on=[KN.STOCK_ID.value], how='left')
@@ -784,7 +784,7 @@ class FundamentalValueFactor(FactorBase):
 
         sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
         financial_data = cls().Q.query(sql_)
-        price_data = cls()._csv_data([PVN.TOTAL_MV.value])
+        price_data = cls()._csv_data(data_name=[PVN.TOTAL_MV.value])
 
         # 过滤未上市公司
         data_ = pd.merge(financial_data, cls().list_date, on=[KN.STOCK_ID.value], how='left')
@@ -811,7 +811,7 @@ class FundamentalValueFactor(FactorBase):
 
         sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
         financial_data = cls().Q.query(sql_)
-        price_data = cls()._csv_data([PVN.TOTAL_MV.value])
+        price_data = cls()._csv_data(data_name=[PVN.TOTAL_MV.value])
 
         # 过滤未上市公司
         data_ = pd.merge(financial_data, cls().list_date, on=[KN.STOCK_ID.value], how='left')
@@ -843,7 +843,7 @@ class FundamentalValueFactor(FactorBase):
 
         sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
         financial_data = cls().Q.query(sql_)
-        price_data = cls()._csv_data([PVN.TOTAL_MV.value])
+        price_data = cls()._csv_data(data_name=[PVN.TOTAL_MV.value])
 
         # 过滤未上市公司
         data_ = pd.merge(financial_data, cls().list_date, on=[KN.STOCK_ID.value], how='left')
@@ -875,7 +875,7 @@ class FundamentalValueFactor(FactorBase):
 
         sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
         financial_data = cls().Q.query(sql_)
-        price_data = cls()._csv_data([PVN.TOTAL_MV.value])
+        price_data = cls()._csv_data(data_name=[PVN.TOTAL_MV.value])
 
         # 过滤未上市公司
         data_ = pd.merge(financial_data, cls().list_date, on=[KN.STOCK_ID.value], how='left')
@@ -907,7 +907,7 @@ class FundamentalValueFactor(FactorBase):
 
         sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
         financial_data = cls().Q.query(sql_)
-        price_data = cls()._csv_data([PVN.TOTAL_MV.value])
+        price_data = cls()._csv_data(data_name=[PVN.TOTAL_MV.value])
 
         # 过滤未上市公司
         data_ = pd.merge(financial_data, cls().list_date, on=[KN.STOCK_ID.value], how='left')
@@ -940,7 +940,7 @@ class FundamentalValueFactor(FactorBase):
 
         sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
         financial_data = cls().Q.query(sql_)
-        price_data = cls()._csv_data([PVN.TOTAL_MV.value])
+        price_data = cls()._csv_data(data_name=[PVN.TOTAL_MV.value])
 
         # 过滤未上市公司
         data_ = pd.merge(financial_data, cls().list_date, on=[KN.STOCK_ID.value], how='left')
@@ -968,7 +968,7 @@ class FundamentalValueFactor(FactorBase):
 
         sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
         financial_data = cls().Q.query(sql_)
-        price_data = cls()._csv_data([PVN.TOTAL_MV.value])
+        price_data = cls()._csv_data(data_name=[PVN.TOTAL_MV.value])
 
         # 过滤未上市公司
         data_ = pd.merge(financial_data, cls().list_date, on=[KN.STOCK_ID.value], how='left')
@@ -1007,7 +1007,7 @@ class FundamentalValueFactor(FactorBase):
 
         sql_ = cls().Q.finance_SQL(sql_keys, sta, end, f_type)
         financial_data = cls().Q.query(sql_)
-        price_data = cls()._csv_data([PVN.TOTAL_MV.value])
+        price_data = cls()._csv_data(data_name=[PVN.TOTAL_MV.value])
 
         # 过滤未上市公司
         data_ = pd.merge(financial_data, cls().list_date, on=[KN.STOCK_ID.value], how='left')
