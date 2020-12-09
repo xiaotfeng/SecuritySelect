@@ -68,18 +68,12 @@ def main():
     pass
 
 
-def main1(factor):
-
-    factor_dict = {"factor_name": factor,
-                   "factor_params": {},
-                   'factor': None,
-                   'cal': True
-                   }
+def main1(fact_dict):
 
     # print(f"\033[1;31m{dt.datetime.now().strftime('%X')}: "
     #       f"{factor_dict['factor_name']}-{factor_dict['factor_params']['n']}\033[0m")
-    print(f"\033[1;31m{dt.datetime.now().strftime('%X')}: {factor_dict['factor_name']}\033[0m")
-    cal_factor(factor_dict)
+    print(f"\033[1;31m{dt.datetime.now().strftime('%X')}: {fact_dict['factor_name']}\033[0m")
+    cal_factor(fact_dict)
 
     # factor_dict = {"factor_category": factor_category,
     #                "factor_name": factor,
@@ -94,10 +88,61 @@ def main1(factor):
     # cal_factor(factor_dict, db)
 
 
+def cal(fact_list):
+    for fac in fact_list:
+        factor_dict = {"factor_name": fac,
+                       "factor_params": {},
+                       'factor': None,
+                       'cal': True
+                       }
+        main1(factor_dict)
+
+
+def cal_pa(fact_list, pa):
+    for fac in fact_list:
+        for p_ in pa:
+            factor_dict = {"factor_name": fac,
+                           "factor_params": {'period': p_,
+                                             "n": 1},
+                           'factor': None,
+                           'cal': True
+                           }
+            print(p_)
+            main1(factor_dict)
+
+
+def main_M():
+    fac_dict = {"Q": ["HighFreq035", "HighFreq056", "HighFreq057", "HighFreq058", "HighFreq059", "HighFreq060", "HighFreq062", "HighFreq080"],
+                "W": ["HighFreq038", "HighFreq039", "HighFreq040", "HighFreq041", "HighFreq042", "HighFreq043", ],
+                "E": ["HighFreq044", "HighFreq045", "HighFreq046", "HighFreq047", "HighFreq076", "HighFreq077", "HighFreq078"],
+                "R": ["HighFreq071", "HighFreq072", "HighFreq073", "HighFreq074", "HighFreq075"],
+                "T": ["HighFreq036", "HighFreq037"]}
+    pam = [5, 15, 30, 60]
+
+    pool = Pool(processes=4)
+    for key_, value_ in fac_dict.items():
+        pool.apply_async(cal, (value_, pam))
+    # pool.apply_async(cal_pa, (dd, pam))
+    pool.close()
+    pool.join()
+
+
 if __name__ == '__main__':
     # for i in range(6, 28):
     #     if i in [10, 11]:
     #         continue
     #     factor = 'Momentum{:0>3}'.format(i)
-    factor = 'HighFreq078'
-    main1(factor)
+    # f_list = ['FundFlow020']
+    p = Pool(2)
+    p.apply_async(cal_pa, (['FundFlow020'], ['all']))
+    p.apply_async(cal_pa, (['FundFlow020'], ['open']))
+    p.apply_async(cal_pa, (['FundFlow020'], ['between']))
+    p.apply_async(cal_pa, (['FundFlow020'], ['close']))
+    # p.apply_async(cal_pa, (['VolPrice020'], [5, 10]))
+    # p.apply_async(cal_pa, (['FundFlow019'], ['close']))
+    # p.apply_async(cal_pa, (['FundFlow020'], ['all', 'open', 'between', 'close']))
+    # cal_pa(['FundFlow019'], ['close'])
+    # cal_pa(['FundFlow020'], ['all', 'open', 'between', 'close'])
+    p.close()
+    p.join()
+    # cal(['FundFlow047'])

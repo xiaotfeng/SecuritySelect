@@ -496,6 +496,60 @@ class Multicollinearity(object):
 
         return fact_comp
 
+    # *正交化*
+    @staticmethod
+    def orthogonal(factor_df, method='schimidt'):
+        # 固定顺序的施密特正交化
+        def schimidt():
+
+            col_name = factor_df.columns
+            factors1 = factor_df.values
+
+            R = np.zeros((factors1.shape[1], factors1.shape[1]))
+            Q = np.zeros(factors1.shape)
+            for k in range(0, factors1.shape[1]):
+                R[k, k] = np.sqrt(np.dot(factors1[:, k], factors1[:, k]))
+                Q[:, k] = factors1[:, k] / R[k, k]
+                for j in range(k + 1, factors1.shape[1]):
+                    R[k, j] = np.dot(Q[:, k], factors1[:, j])
+                    factors1[:, j] = factors1[:, j] - R[k, j] * Q[:, k]
+
+            Q = pd.DataFrame(Q, columns=col_name, index=factor_df.index)
+            return Q
+
+        # 规范正交
+        def canonial():
+            factors1 = factor_df.values
+            col_name = factor_df.columns
+            D, U = np.linalg.eig(np.dot(factors1.T, factors1))
+            S = np.dot(U, np.diag(D ** (-0.5)))
+
+            Fhat = np.dot(factors1, S)
+            Fhat = pd.DataFrame(Fhat, columns=col_name, index=factor_df.index)
+
+            return Fhat
+
+        # 对称正交
+        def symmetry():
+            col_name = factor_df.columns
+            factors1 = factor_df.values
+            D, U = np.linalg.eig(np.dot(factors1.T, factors1))
+            S = np.dot(U, np.diag(D ** (-0.5)))
+
+            Fhat = np.dot(factors1, S)
+            Fhat = np.dot(Fhat, U.T)
+            Fhat = pd.DataFrame(Fhat, columns=col_name, index=factor_df.index)
+
+            return Fhat
+
+        method_dict = {
+            "schimidt": schimidt(),
+            "canonial": canonial(),
+            "symmetry": symmetry()
+        }
+
+        return method_dict[method]
+
     def _weight(self,
                 data: pd.DataFrame = None,
                 rp: int = 60,

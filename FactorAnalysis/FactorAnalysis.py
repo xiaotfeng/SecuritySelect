@@ -723,7 +723,7 @@ class FactorValidityCheck(object):
             os.makedirs(file_path)
 
         data_path = os.path.join(file_path,  factor.factor_name + '.csv')
-        factor.data.to_csv(data_path)
+        factor.data.to_csv(data_path, header=True)
 
     """画图"""
 

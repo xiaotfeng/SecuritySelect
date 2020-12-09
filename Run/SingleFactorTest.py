@@ -46,39 +46,37 @@ def Single_factor_test(params: dict,
     print('Stop')
 
 
-def main1():
-    # factor_name = 'Alpha_501'  # ROA_G_ttm
-    for i in ["EP_LR", "ROE_Q_avg_deducted", "ROA_Q_avg", "Sales_G_Q_LR", "EPS_G_TTM", "currentdebttodebt"]:
-        df = pd.read_csv(f"A:\\数据\\{i}.csv")
+def main1(factor_name,
+          hp,
+          save: bool = False):
 
-        # df_.set_index(['date', 'stock_id'], inplace=True)
-        # fact_value = pd.read_csv(f'A:\\数据\\FactorPool\\Factor_Effective\\CompFactor\\{factor_name}.csv')
-        # fact_value = pd.read_csv(f'{FPN.factor_raw_data.value}{factor_category}\\{factor_name}.csv')
-        factor_p = {"fact_name": i,
-                    "factor_params": {"switch": False},
-                    'db': 'Fin',
-                    'factor_value': df,
-                    'cal': False}
-        factor_process = {"outliers": 'mad',  # mad
-                          "neu": 'mv+industry',  # mv+industry
-                          "stand": 'mv',  # mv
-                          "switch_freq": False,
-                          "limit": 120}
+    df = pd.read_csv(f"A:\\DataBase\\SecuritySelectData\\FactorPool\\FactorRawData\\TechnicalHighFrequencyFactor\\"
+                     f"{factor_name}.csv", header=None)
+    df.columns = ['date', 'stock_id', factor_name]
+    factor_p = {"fact_name": factor_name,
+                "factor_params": {"switch": False},
+                'db': 'HFD',
+                'factor_value': df,
+                'cal': False}
+    factor_process = {"outliers": '',  # mad
+                      "neu": '',  # mv+industry
+                      "stand": '',  # mv
+                      "switch_freq": False,
+                      "limit": 120}
 
-        print(f"\033[1;31m{dt.datetime.now().strftime('%X')}: {i}\033[0m")
+    print(f"\033[1;31m{dt.datetime.now().strftime('%X')}: {factor_name}\033[0m")
 
-        Single_factor_test(params=factor_p,
-                           process=factor_process,
-                           hp=20,
-                           save=False)
-    pass
+    Single_factor_test(params=factor_p,
+                       process=factor_process,
+                       hp=hp,
+                       save=save)
 
 
 def main2(factor_name, hp, save: bool = False):
     fact_value = None
 
     factor_p = {"fact_name": factor_name,
-                "factor_params": {"x_min": 60},
+                "factor_params": {"n": 21},
                 'db': 'HFD',
                 'factor_value': fact_value,
                 'cal': True}
@@ -109,12 +107,13 @@ def main2(factor_name, hp, save: bool = False):
 
 
 if __name__ == '__main__':
+
     # for i in range(6, 28):
     #     if i in [10, 11]:
     #         continue
     #     factor = 'Momentum{:0>3}'.format(i)
     #     main2(factor, 1)
 
-    factor = 'HighFreq037'
-    main2(factor, hp=5, save=False)
+    factor = 'HighFreq062'
+    main1(factor, hp=5, save=False)
 

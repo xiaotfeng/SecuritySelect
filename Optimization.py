@@ -273,6 +273,6 @@ if __name__ == '__main__':
     data_ = np.random.rand(100).reshape(20, 5)
     IC = pd.DataFrame(data=data_)
 
-    A = Test(IC, 5)
-    A.params = {"threshold": 2}
-    res = A.solve()
+    # A = Test(IC, 5)
+    # A.params = {"threshold": 2}
+    # res = A.solve()

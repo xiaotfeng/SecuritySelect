@@ -103,9 +103,15 @@ class FactorBase(object):
     def csv_HFD_data(self,
                      data_name: list,
                      func: Callable = None,
+                     fun_kwargs: dict = {},
                      file_path: str = FPN.HFD_Stock_M.value,
                      sub_file: str = '') -> Dict[str, Any]:
-        Path = file_path if sub_file == '' else os.path.join(file_path, sub_file)
+        if sub_file == '':
+            Path = file_path
+        elif sub_file == '1minute':
+            Path = FPN.HFD_Stock_M.value
+        else:
+            Path = os.path.join(file_path, sub_file)
         data_dict = {}
         file_names = os.listdir(Path)
 
@@ -119,10 +125,10 @@ class FactorBase(object):
                     continue
                 data_df['date'] = file_name[:-4]
                 data_df.rename(columns={'code': 'stock_id'}, inplace=True)
-                res = func(data_df)
+                res = func(data_df, **fun_kwargs)
                 data_dict[file_name[:-4]] = res
-            if i == 2:
-                break
+            # if i == 3:
+            #     break
 
         return data_dict
 
@@ -151,4 +157,4 @@ class FactorBase(object):
 
 if __name__ == '__main__':
     A = FactorBase()
-    A.csv_HFD_data()
+    # A.csv_HFD_data()

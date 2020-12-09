@@ -252,7 +252,6 @@ class Strategy(object):
     # 因子收益和残差收益
     @timer
     def fact_residual_ret(self, factor: pd.DataFrame = None):
-
         data_input = pd.concat([self.stock_ret, self.ind_exp, factor, self.mv], axis=1, join='inner')
         reg_res = data_input.groupby(KN.TRADE_DATE.value).apply(self.WLS)
 
@@ -581,7 +580,8 @@ class Strategy(object):
         if not {PVN.LIQ_MV.value, KN.STOCK_RETURN.value, SN.INDUSTRY_FLAG.value}.issubset(columns_ef) \
                 or {PVN.LIQ_MV.value, KN.STOCK_RETURN.value, SN.INDUSTRY_FLAG.value}.issuperset(columns_ef) \
                 or data_copy.shape[0] <= sample_length:
-            res = type('res', (object,), dict(params=pd.Series(index=self.fact_name)))
+            res = type('res', (object,), dict(params=pd.Series(index=self.fact_name),
+                                              resid=pd.Series(index=data_copy.index)))
         else:
             X = pd.get_dummies(
                 data_copy.loc[:, data_copy.columns.difference([PVN.LIQ_MV.value, KN.STOCK_RETURN.value])],
@@ -636,16 +636,16 @@ class Strategy(object):
     def main(self):
         # 因子预处理
 
-        fact_stand = self.fac_exp.apply(self.FP.main, args=('', '', ''))
-        # fact_stand = self.fac_exp
+        # fact_stand = self.fac_exp.apply(self.FP.main, args=('', '', ''))
+        fact_stand = self.fac_exp
         # # 因子收益与个股残差收益计算
-        # self.fact_residual_ret(fact_stand)
+        self.fact_residual_ret(fact_stand)
 
         # 收益预测
         self.Return_Forecast1(factor=fact_stand)
 
         # 风险估计
-        # self.Risk_Forecast()
+        self.Risk_Forecast()
 
         cons = ['ind_weight', 'ind_mv']
         # OPT
@@ -699,5 +699,6 @@ if __name__ == '__main__':
         B.main()
     except Exception as e:
         # send_email(email, "迭代出错！", "")
+        print(e)
         pass
     print("s")

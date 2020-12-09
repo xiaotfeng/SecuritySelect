@@ -32,6 +32,7 @@ class FilePathName(Enum):
 
     HFD_Stock_M = 'Y:\\合成数据\\逐笔1min\\逐笔1min'  # 高频分钟数据
     HFD_Stock_Depth = 'Y:\\合成数据\\十档Vwap'  # 高频十档盘口数据
+    HFD_Stock_Depth_1min = 'Y:\\合成数据\\十档1min\\因子数据'  # 高频十档分钟数据
     HFD_Stock_CF = 'Y:\\合成数据\\逐笔资金流向'  # 逐笔资金流向
     HFD = 'A:\\DataBase\\HFD'  # 高频数据存储地址
 
@@ -155,6 +156,7 @@ class FactorCategoryName(Enum):
     EQ = 'QualityFactor'
     Size = 'SizeFactor'
     MTM = 'MomentumFactor'
+    HFD = 'HighFrequencyFactor'
 
 
 @unique
